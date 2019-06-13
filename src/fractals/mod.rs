@@ -22,7 +22,6 @@ impl Image {
   pub fn view_width(&self) -> f64 {
     (self.upper_left.re - self.lower_right.re).abs()
   }
-
   pub fn view_height(&self) -> f64 {
     (self.lower_right.im - self.upper_left.im).abs()
   }
@@ -32,6 +31,13 @@ impl Image {
   }
   pub fn top(&self) -> f64 {
     self.upper_left.im
+  }
+
+  pub fn x_delta(&self) -> f64 {
+    self.view_width() / ((self.size.width - 1) as f64)
+  }
+  pub fn y_delta(&self) -> f64 {
+    self.view_height() / ((self.size.height - 1) as f64)
   }
 }
 
@@ -68,6 +74,16 @@ mod tests {
 
   #[test]
   fn test_top() {
-    assert_eq!(1.2, image().top())
+    assert_eq!(1.2, image().top());
+  }
+
+  #[test]
+  fn test_x_delta() {
+    assert_eq!(0.8, image().x_delta());
+  }
+
+  #[test]
+  fn test_y_delta() {
+    assert_eq!(0.6, image().y_delta());
   }
 }

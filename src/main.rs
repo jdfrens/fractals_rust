@@ -69,16 +69,16 @@ fn main() {
 
     };
 
-    let x_delta = job.image.view_width() / ((job.image.size.width - 1) as f64);
-    let y_delta = job.image.view_height() / ((job.image.size.height - 1) as f64);
-
     let mut image =
         image::ImageBuffer::new(job.image.size.width as u32, job.image.size.height as u32);
 
     for row in 0..job.image.size.height {
         for col in 0..job.image.size.width {
             let mut z = Complex::new(0.0, 0.0);
-            let c = Complex::new(job.image.left() + col as f64 * x_delta, job.image.top() - row as f64 * y_delta);
+            let c = Complex::new(
+                job.image.left() + col as f64 * job.image.x_delta(),
+                job.image.top() - row as f64 * job.image.y_delta(),
+            );
             let mut iter = 0;
 
             while z.norm_sqr() < 4.0 && iter < 512 {
