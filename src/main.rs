@@ -25,6 +25,16 @@ mod fractals {
         pub upper_left: Complex<f64>,
         pub lower_right: Complex<f64>,
     }
+
+    impl Image {
+        pub fn view_width(&self) -> f64 {
+            (self.upper_left.re - self.lower_right.re).abs()
+        }
+
+        pub fn view_height(&self) -> f64 {
+ (self.lower_right.im - self.upper_left.im).abs()
+        }
+    }
 }
 
 fn main() {
@@ -89,14 +99,11 @@ fn main() {
 
     };
 
-    let x_width = (job.image.upper_left.re - job.image.lower_right.re).abs();
-    let y_height = (job.image.lower_right.im - job.image.upper_left.im).abs();
-
     let left = job.image.upper_left.re;
     let top = job.image.upper_left.im;
 
-    let x_delta = x_width / ((job.image.size.width - 1) as f64);
-    let y_delta = y_height / ((job.image.size.height - 1) as f64);
+    let x_delta = job.image.view_width() / ((job.image.size.width - 1) as f64);
+    let y_delta = job.image.view_height() / ((job.image.size.height - 1) as f64);
 
     let mut image =
         image::ImageBuffer::new(job.image.size.width as u32, job.image.size.height as u32);
