@@ -5,21 +5,27 @@ use std::env;
 use std::fs::File;
 use std::io::Read;
 
-#[derive(Debug)]
-struct Size {
-    width: u32,
-    height: u32,
-}
+mod fractals {
+    use num_complex::Complex;
 
-#[derive(Debug)]
-struct ImageConfig {
-    size: Size,
-    upper_left: Complex<f64>,
-    lower_right: Complex<f64>,
+    #[derive(Debug)]
+    pub struct Job {
+        pub image: Image,
+    }
+
+    #[derive(Debug)]
+    pub struct Size {
+        pub width: u32,
+        pub height: u32,
+    }
+
+    #[derive(Debug)]
+    pub struct Image {
+        pub size: Size,
+        pub upper_left: Complex<f64>,
+        pub lower_right: Complex<f64>,
+    }
 }
-// struct Job {
-//     image: ImageConfig,
-// }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -71,31 +77,32 @@ fn main() {
     let imag: f64 = imag_str.parse().unwrap();
     let lower_right = Complex::new(real, imag);
 
-    let real_image_config = ImageConfig {
-        size: Size {
-            width: size3[0] as u32,
-            height: size3[1] as u32,
+    let job = fractals::Job {
+        image: fractals::Image {
+            size: fractals::Size {
+                width: size3[0] as u32,
+                height: size3[1] as u32,
+            },
+            upper_left: upper_left,
+            lower_right: lower_right,
         },
-        upper_left: upper_left,
-        lower_right: lower_right,
+
     };
 
-    let x_width = (real_image_config.upper_left.re - real_image_config.lower_right.re).abs();
-    let y_height = (real_image_config.lower_right.im - real_image_config.upper_left.im).abs();
+    let x_width = (job.image.upper_left.re - job.image.lower_right.re).abs();
+    let y_height = (job.image.lower_right.im - job.image.upper_left.im).abs();
 
-    let left = real_image_config.upper_left.re;
-    let top = real_image_config.upper_left.im;
+    let left = job.image.upper_left.re;
+    let top = job.image.upper_left.im;
 
-    let x_delta = x_width / ((real_image_config.size.width - 1) as f64);
-    let y_delta = y_height / ((real_image_config.size.height - 1) as f64);
+    let x_delta = x_width / ((job.image.size.width - 1) as f64);
+    let y_delta = y_height / ((job.image.size.height - 1) as f64);
 
-    let mut image = image::ImageBuffer::new(
-        real_image_config.size.width as u32,
-        real_image_config.size.height as u32,
-    );
+    let mut image =
+        image::ImageBuffer::new(job.image.size.width as u32, job.image.size.height as u32);
 
-    for row in 0..real_image_config.size.height {
-        for col in 0..real_image_config.size.width {
+    for row in 0..job.image.size.height {
+        for col in 0..job.image.size.width {
             let mut z = Complex::new(0.0, 0.0);
             let c = Complex::new(left + col as f64 * x_delta, top - row as f64 * y_delta);
             let mut iter = 0;
