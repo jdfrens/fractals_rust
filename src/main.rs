@@ -5,37 +5,7 @@ use std::env;
 use std::fs::File;
 use std::io::Read;
 
-mod fractals {
-    use num_complex::Complex;
-
-    #[derive(Debug)]
-    pub struct Job {
-        pub image: Image,
-    }
-
-    #[derive(Debug)]
-    pub struct Size {
-        pub width: u32,
-        pub height: u32,
-    }
-
-    #[derive(Debug)]
-    pub struct Image {
-        pub size: Size,
-        pub upper_left: Complex<f64>,
-        pub lower_right: Complex<f64>,
-    }
-
-    impl Image {
-        pub fn view_width(&self) -> f64 {
-            (self.upper_left.re - self.lower_right.re).abs()
-        }
-
-        pub fn view_height(&self) -> f64 {
- (self.lower_right.im - self.upper_left.im).abs()
-        }
-    }
-}
+mod fractals;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
