@@ -35,5 +35,5 @@ fn main() {
             }
         }
     }
-    image.save("fractal.png").unwrap();
+    image.save("images/fractal.png").unwrap();
 }
