@@ -5,10 +5,25 @@ use std::env;
 use std::fs::File;
 use std::io::Read;
 
+#[derive(Debug)]
+struct Size {
+    width: u32,
+    height: u32,
+}
+
+#[derive(Debug)]
+struct ImageConfig {
+    size: Size,
+    upper_left: Complex<f64>,
+    lower_right: Complex<f64>,
+}
+// struct Job {
+//     image: ImageConfig,
+// }
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     let input_filename = &args[1];
-    println!("{:?}", input_filename);
 
     let mut file = File::open(input_filename).expect("Unable to open file");
     let mut contents = String::new();
@@ -46,8 +61,8 @@ fn main() {
 
     let lower_right = image_config.get(&serde_yaml::Value::String("lowerRight".to_string()));
     let lower_right = match lower_right {
-        Some(ul) => ul.as_str().unwrap(),
-        None => panic!("no upper left"),
+        Some(lr) => lr.as_str().unwrap(),
+        None => panic!("no lower right"),
     };
     let lower_right2: Vec<&str> = lower_right.split('+').collect();
     let real: f64 = lower_right2[0].parse().unwrap();
@@ -56,24 +71,31 @@ fn main() {
     let imag: f64 = imag_str.parse().unwrap();
     let lower_right = Complex::new(real, imag);
 
-    let x_width = (upper_left.re - lower_right.re).abs();
-    let y_height = (lower_right.im - upper_left.im).abs();
+    let real_image_config = ImageConfig {
+        size: Size {
+            width: size3[0] as u32,
+            height: size3[1] as u32,
+        },
+        upper_left: upper_left,
+        lower_right: lower_right,
+    };
 
-    let left = upper_left.re;
-    let top = upper_left.im;
+    let x_width = (real_image_config.upper_left.re - real_image_config.lower_right.re).abs();
+    let y_height = (real_image_config.lower_right.im - real_image_config.upper_left.im).abs();
 
-    println!("{:?} {:?} {:?} {:?}", x_width, y_height, left, top);
+    let left = real_image_config.upper_left.re;
+    let top = real_image_config.upper_left.im;
 
-    let width = size3[0] as u32;
-    let height = size3[1] as u32;
+    let x_delta = x_width / ((real_image_config.size.width - 1) as f64);
+    let y_delta = y_height / ((real_image_config.size.height - 1) as f64);
 
-    let x_delta = x_width / ((width - 1) as f64);
-    let y_delta = y_height / ((height - 1) as f64);
+    let mut image = image::ImageBuffer::new(
+        real_image_config.size.width as u32,
+        real_image_config.size.height as u32,
+    );
 
-    let mut image = image::ImageBuffer::new(width as u32, height as u32);
-
-    for row in 0..height {
-        for col in 0..width {
+    for row in 0..real_image_config.size.height {
+        for col in 0..real_image_config.size.width {
             let mut z = Complex::new(0.0, 0.0);
             let c = Complex::new(left + col as f64 * x_delta, top - row as f64 * y_delta);
             let mut iter = 0;
