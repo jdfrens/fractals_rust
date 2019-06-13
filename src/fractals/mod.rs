@@ -26,38 +26,48 @@ impl Image {
   pub fn view_height(&self) -> f64 {
     (self.lower_right.im - self.upper_left.im).abs()
   }
+
+  pub fn left(&self) -> f64 {
+    self.upper_left.re
+  }
+  pub fn top(&self) -> f64 {
+    self.upper_left.im
+  }
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
 
-  #[test]
-  fn test_view_width() {
-    let image = Image {
+  fn image() -> Image {
+    Image {
       size: Size {
         width: 5,
         height: 5,
       },
       upper_left: Complex::new(-2.0, 1.2),
       lower_right: Complex::new(1.2, -1.2),
-    };
+    }
+  }
 
-    assert_eq!(3.2, image.view_width());
+  #[test]
+  fn test_view_width() {
+    assert_eq!(3.2, image().view_width());
   }
 
 
   #[test]
   fn test_view_height() {
-    let image = Image {
-      size: Size {
-        width: 5,
-        height: 5,
-      },
-      upper_left: Complex::new(-2.0, 1.2),
-      lower_right: Complex::new(1.2, -1.2),
-    };
+    assert_eq!(2.4, image().view_height());
+  }
 
-    assert_eq!(2.4, image.view_height());
+  #[test]
+  fn test_left() {
+    assert_eq!(-2.0, image().left());
+  }
+
+  #[test]
+  fn test_top() {
+    assert_eq!(1.2, image().top())
   }
 }
