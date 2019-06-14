@@ -1,0 +1,14 @@
+version: 2.1
+
+jobs:
+  test:
+    docker:
+      - image: circleci/rust:[latest]
+    steps:
+      - checkout
+      - run: run test
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test
