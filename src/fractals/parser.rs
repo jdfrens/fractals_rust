@@ -1,7 +1,7 @@
 use num_complex::Complex;
-use serde_yaml::{Mapping, Value};
 use std::fs::File;
 use std::io::Read;
+use yaml_rust::{Yaml, YamlLoader};
 
 pub fn parse(input_filename: &String) -> super::Job {
   let mut file = File::open(input_filename).expect("Unable to open file");
@@ -10,28 +10,20 @@ pub fn parse(input_filename: &String) -> super::Job {
   file
     .read_to_string(&mut contents)
     .expect("Unable to read file");
-  let config: Mapping = serde_yaml::from_str(&contents).expect("unable to parse");
-  parse_job(config)
+  let docs = YamlLoader::load_from_str(&contents).unwrap();
+  parse_job(&docs[0])
 }
 
-pub fn parse_job(config: Mapping) -> super::Job {
-  let image_config = config.get(&Value::String("image".to_string()));
-  let image_config = match image_config {
-    Some(ic) => ic,
-    None => panic!("no image!"),
-  };
+pub fn parse_job(job_yaml: &Yaml) -> super::Job {
   super::Job {
-    image: parse_image(image_config),
+    image: parse_image(&job_yaml["image"]),
   }
 }
 
-pub fn parse_image(config: &Value) -> super::Image {
-  let size_value = config.get(&Value::String("size".to_string()));
-  let size = parse_size(size_value);
-  let upper_left_value = config.get(&Value::String("upperLeft".to_string()));
-  let upper_left = parse_complex(upper_left_value);
-  let lower_right_value = config.get(&Value::String("lowerRight".to_string()));
-  let lower_right = parse_complex(lower_right_value);
+pub fn parse_image(image_yaml: &Yaml) -> super::Image {
+  let size = parse_size(&image_yaml["size"]);
+  let upper_left = parse_complex(&image_yaml["upperLeft"]);
+  let lower_right = parse_complex(&image_yaml["lowerRight"]);
 
   super::Image {
     size: size,
@@ -40,34 +32,30 @@ pub fn parse_image(config: &Value) -> super::Image {
   }
 }
 
-fn parse_size(size_value: Option<&Value>) -> super::Size {
-  let size = match size_value {
-    Some(s) => s.as_str().unwrap(),
-    None => panic!("no size"),
-  };
-  let size2: Vec<&str> = size.split('x').collect();
-  let size3: Vec<i32> = size2
-    .into_iter()
-    .map(|x| x.parse::<i32>().unwrap())
+fn parse_size(size: &Yaml) -> super::Size {
+  let size_vec: Vec<u32> = size
+    .as_str()
+    .unwrap()
+    .split('x')
+    .map(|x| x.parse::<u32>().unwrap())
     .collect();
 
   super::Size {
-    width: size3[0] as u32,
-    height: size3[1] as u32,
+    width: size_vec[0],
+    height: size_vec[1],
   }
 }
 
-fn parse_complex(complex_value: Option<&Value>) -> Complex<f64> {
-  let complex_string = match complex_value {
-    Some(ul) => ul.as_str().unwrap(),
-    None => panic!("no upper left"),
-  };
-  let vector: Vec<&str> = complex_string.split('+').collect();
-  let real: f64 = vector[0].parse().unwrap();
-  let imag_length = vector[1].len();
-  let imag_str = &vector[1].to_string()[0..(imag_length - 1)];
-  let imag: f64 = imag_str.parse().unwrap();
-  Complex::new(real, imag)
+fn parse_complex(complex_value: &Yaml) -> Complex<f64> {
+  let complex_vec: Vec<f64> = complex_value
+    .as_str()
+    .unwrap()
+    .replace("i", "")
+    .split('+')
+    .map(|x| x.parse::<f64>().unwrap())
+    .collect();
+
+  Complex::new(complex_vec[0], complex_vec[1])
 }
 
 #[cfg(test)]
@@ -77,7 +65,7 @@ mod tests {
 
   #[test]
   fn test_parse_complex() {
-    let parse = |s: &str| -> Complex<f64> { parse_complex(Some(&Value::String(s.to_string()))) };
+    let parse = |s: &str| -> Complex<f64> { parse_complex(&Yaml::String(s.to_string())) };
 
     assert_eq!(Complex::new(5.2, 3.8), parse("5.2+3.8i"));
     assert_eq!(Complex::new(111.5, 876.222), parse("111.5+876.222i"));
@@ -90,7 +78,7 @@ mod tests {
 
   #[test]
   fn test_parse_size() {
-    let parse = |s: &str| -> Size { parse_size(Some(&Value::String(s.to_string()))) };
+    let parse = |s: &str| -> Size { parse_size(&Yaml::String(s.to_string())) };
 
     assert_eq!(
       Size {
