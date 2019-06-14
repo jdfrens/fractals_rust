@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   test:
     docker:
-      - image: circleci/rust:[latest]
+      - image: circleci/rust:latest
     steps:
       - checkout
       - run: run test
