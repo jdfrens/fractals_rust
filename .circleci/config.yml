@@ -6,7 +6,7 @@ jobs:
       - image: circleci/rust:latest
     steps:
       - checkout
-      - run: run test
+      - run: cargo test
 workflows:
   version: 2
   test:
