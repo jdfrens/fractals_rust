@@ -2,18 +2,18 @@ use num_complex::Complex;
 
 pub mod parser;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Job {
   pub image: Image,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Size {
   pub width: u32,
   pub height: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Image {
   pub size: Size,
   pub upper_left: Complex<f64>,

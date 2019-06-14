@@ -69,3 +69,42 @@ fn parse_complex(complex_value: Option<&Value>) -> Complex<f64> {
   let imag: f64 = imag_str.parse().unwrap();
   Complex::new(real, imag)
 }
+
+#[cfg(test)]
+mod tests {
+  use super::super::*;
+  use super::*;
+
+  #[test]
+  fn test_parse_complex() {
+    let parse = |s: &str| -> Complex<f64> { parse_complex(Some(&Value::String(s.to_string()))) };
+
+    assert_eq!(Complex::new(5.2, 3.8), parse("5.2+3.8i"));
+    assert_eq!(Complex::new(111.5, 876.222), parse("111.5+876.222i"));
+    assert_eq!(Complex::new(1.0, 2.0), parse("1+2i"));
+    assert_eq!(Complex::new(-5.2, 3.8), parse("-5.2+3.8i"));
+    assert_eq!(Complex::new(5.2, -3.8), parse("5.2+-3.8i"));
+    assert_eq!(Complex::new(-5.2, -3.8), parse("-5.2+-3.8i"));
+  }
+
+
+  #[test]
+  fn test_parse_size() {
+    let parse = |s: &str| -> Size { parse_size(Some(&Value::String(s.to_string()))) };
+
+    assert_eq!(
+      Size {
+        width: 100,
+        height: 333
+      },
+      parse("100x333")
+    );
+    assert_eq!(
+      Size {
+        width: 9,
+        height: 12_345
+      },
+      parse("9x12345")
+    );
+  }
+}
