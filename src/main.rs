@@ -75,10 +75,7 @@ fn main() {
     for row in 0..job.image.size.height {
         for col in 0..job.image.size.width {
             let mut z = Complex::new(0.0, 0.0);
-            let c = Complex::new(
-                job.image.left() + col as f64 * job.image.x_delta(),
-                job.image.top() - row as f64 * job.image.y_delta(),
-            );
+            let c = job.image.complex_at(col, row);
             let mut iter = 0;
 
             while z.norm_sqr() < 4.0 && iter < 512 {

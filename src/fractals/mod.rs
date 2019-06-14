@@ -39,6 +39,13 @@ impl Image {
   pub fn y_delta(&self) -> f64 {
     self.view_height() / ((self.size.height - 1) as f64)
   }
+
+  pub fn complex_at(&self, col: u32, row: u32) -> Complex<f64> {
+    Complex::new(
+      self.left() + col as f64 * self.x_delta(),
+      self.top() - row as f64 * self.y_delta(),
+    )
+  }
 }
 
 #[cfg(test)]
@@ -48,8 +55,8 @@ mod tests {
   fn image() -> Image {
     Image {
       size: Size {
-        width: 5,
-        height: 5,
+        width: 512,
+        height: 384,
       },
       upper_left: Complex::new(-2.0, 1.2),
       lower_right: Complex::new(1.2, -1.2),
@@ -79,11 +86,23 @@ mod tests {
 
   #[test]
   fn test_x_delta() {
-    assert_eq!(0.8, image().x_delta());
+    assert_eq!(0.0062622309197651665, image().x_delta());
   }
 
   #[test]
   fn test_y_delta() {
-    assert_eq!(0.6, image().y_delta());
+    assert_eq!(0.006266318537859007, image().y_delta());
+  }
+
+  #[test]
+  fn test_complex_at() {
+    assert_eq!(
+      Complex::new(-1.9686888454011742, 0.39791122715404703),
+      image().complex_at(5, 128)
+    );
+    assert_eq!(
+      Complex::new(-0.12133072407044998, 1.0809399477806787),
+      image().complex_at(300, 19)
+    );
   }
 }
