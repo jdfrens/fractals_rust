@@ -33,9 +33,12 @@ pub fn parse_image(image_yaml: &Yaml) -> super::Image {
 }
 
 fn parse_size(size: &Yaml) -> super::Size {
-  let size_vec: Vec<u32> = size
-    .as_str()
-    .unwrap()
+  let size_str: &str = match size.as_str() {
+    Some(s) => s,
+    None => &"1024x768",
+  };
+
+  let size_vec: Vec<u32> = size_str
     .split('x')
     .map(|x| x.parse::<u32>().unwrap())
     .collect();
@@ -93,6 +96,49 @@ mod tests {
         height: 12_345
       },
       parse("9x12345")
+    );
+  }
+
+  #[test]
+  fn test_parse_image() {
+    let input = r#"
+      image:
+        size: 512x384
+        upperLeft: -2.0+1.2i
+        lowerRight: 1.2+-1.2i
+    "#;
+    let docs = YamlLoader::load_from_str(input).unwrap();
+    assert_eq!(
+      Image {
+        size: Size {
+          width: 512,
+          height: 384
+        },
+        upper_left: Complex::new(-2.0, 1.2),
+        lower_right: Complex::new(1.2, -1.2),
+      },
+      parse_image(&docs[0]["image"])
+    );
+  }
+
+  #[test]
+  fn test_parse_image_without_size() {
+    let input = r#"
+      image:
+        upperLeft: -2.0+1.2i
+        lowerRight: 1.2+-1.2i
+    "#;
+    let docs = YamlLoader::load_from_str(input).unwrap();
+    assert_eq!(
+      Image {
+        size: Size {
+          width: 1024,
+          height: 768
+        },
+        upper_left: Complex::new(-2.0, 1.2),
+        lower_right: Complex::new(1.2, -1.2),
+      },
+      parse_image(&docs[0]["image"])
     );
   }
 }
