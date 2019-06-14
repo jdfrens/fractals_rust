@@ -1,5 +1,7 @@
 use num_complex::Complex;
 
+pub mod parser;
+
 #[derive(Debug)]
 pub struct Job {
   pub image: Image,
