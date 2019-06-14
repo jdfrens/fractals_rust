@@ -1,5 +1,5 @@
 use num_complex::Complex;
-use serde_yaml;
+use serde_yaml::{Mapping, Value};
 use std::fs::File;
 use std::io::Read;
 
@@ -10,12 +10,12 @@ pub fn parse(input_filename: &String) -> super::Job {
   file
     .read_to_string(&mut contents)
     .expect("Unable to read file");
-  let config: serde_yaml::Mapping = serde_yaml::from_str(&contents).expect("unable to parse");
+  let config: Mapping = serde_yaml::from_str(&contents).expect("unable to parse");
   parse_job(config)
 }
 
-pub fn parse_job(config: serde_yaml::Mapping) -> super::Job {
-  let image_config = config.get(&serde_yaml::Value::String("image".to_string()));
+pub fn parse_job(config: Mapping) -> super::Job {
+  let image_config = config.get(&Value::String("image".to_string()));
   let image_config = match image_config {
     Some(ic) => ic,
     None => panic!("no image!"),
@@ -25,12 +25,13 @@ pub fn parse_job(config: serde_yaml::Mapping) -> super::Job {
   }
 }
 
-pub fn parse_image(config: &serde_yaml::Value) -> super::Image {
-  let size = parse_size(config);
-  let upper_left = config.get(&serde_yaml::Value::String("upperLeft".to_string()));
-  let upper_left = parse_complex(upper_left);
-  let lower_right = config.get(&serde_yaml::Value::String("lowerRight".to_string()));
-  let lower_right = parse_complex(lower_right);
+pub fn parse_image(config: &Value) -> super::Image {
+  let size_value = config.get(&Value::String("size".to_string()));
+  let size = parse_size(size_value);
+  let upper_left_value = config.get(&Value::String("upperLeft".to_string()));
+  let upper_left = parse_complex(upper_left_value);
+  let lower_right_value = config.get(&Value::String("lowerRight".to_string()));
+  let lower_right = parse_complex(lower_right_value);
 
   super::Image {
     size: size,
@@ -39,9 +40,8 @@ pub fn parse_image(config: &serde_yaml::Value) -> super::Image {
   }
 }
 
-fn parse_size(config: &serde_yaml::Value) -> super::Size {
-  let size = config.get(&serde_yaml::Value::String("size".to_string()));
-  let size = match size {
+fn parse_size(size_value: Option<&Value>) -> super::Size {
+  let size = match size_value {
     Some(s) => s.as_str().unwrap(),
     None => panic!("no size"),
   };
@@ -57,15 +57,15 @@ fn parse_size(config: &serde_yaml::Value) -> super::Size {
   }
 }
 
-fn parse_complex(s: Option<&serde_yaml::Value>) -> Complex<f64> {
-  let upper_left = match s {
+fn parse_complex(complex_value: Option<&Value>) -> Complex<f64> {
+  let complex_string = match complex_value {
     Some(ul) => ul.as_str().unwrap(),
     None => panic!("no upper left"),
   };
-  let upper_left2: Vec<&str> = upper_left.split('+').collect();
-  let real: f64 = upper_left2[0].parse().unwrap();
-  let imag_length = upper_left2[1].len();
-  let imag_str = &upper_left2[1].to_string()[0..(imag_length - 1)];
+  let vector: Vec<&str> = complex_string.split('+').collect();
+  let real: f64 = vector[0].parse().unwrap();
+  let imag_length = vector[1].len();
+  let imag_str = &vector[1].to_string()[0..(imag_length - 1)];
   let imag: f64 = imag_str.parse().unwrap();
   Complex::new(real, imag)
 }
