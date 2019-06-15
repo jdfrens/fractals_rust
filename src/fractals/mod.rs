@@ -15,6 +15,8 @@ pub struct Size {
 
 #[derive(Debug, PartialEq)]
 pub struct Image {
+  pub input_filename: String,
+  pub output_filename: String,
   pub size: Size,
   pub upper_left: Complex<f64>,
   pub lower_right: Complex<f64>,
@@ -56,6 +58,8 @@ mod tests {
 
   fn image() -> Image {
     Image {
+      input_filename: "".to_string(),
+      output_filename: "".to_string(),
       size: Size {
         width: 512,
         height: 384,

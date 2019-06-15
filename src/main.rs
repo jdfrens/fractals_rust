@@ -18,7 +18,8 @@ fn main() {
             set_pixel(pixel, iter);
         }
     }
-    image.save("images/fractal.png").unwrap();
+    image.save(&job.image.output_filename).unwrap();
+    println!("wrote {}", job.image.output_filename);
 }
 
 fn iterate(image: &fractals::Image, col: u32, row: u32) -> u32 {

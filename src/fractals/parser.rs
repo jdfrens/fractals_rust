@@ -1,6 +1,7 @@
 use num_complex::Complex;
 use std::fs::File;
 use std::io::Read;
+use std::path::{Path, PathBuf};
 use yaml_rust::{Yaml, YamlLoader};
 
 pub fn parse(input_filename: &String) -> super::Job {
@@ -11,25 +12,32 @@ pub fn parse(input_filename: &String) -> super::Job {
     .read_to_string(&mut contents)
     .expect("Unable to read file");
   let docs = YamlLoader::load_from_str(&contents).unwrap();
-  parse_job(&docs[0])
+  parse_job(input_filename, &docs[0])
 }
 
-pub fn parse_job(job_yaml: &Yaml) -> super::Job {
+pub fn parse_job(input_filename: &String, job_yaml: &Yaml) -> super::Job {
   super::Job {
-    image: parse_image(&job_yaml["image"]),
+    image: parse_image(input_filename, &job_yaml["image"]),
   }
 }
 
-pub fn parse_image(image_yaml: &Yaml) -> super::Image {
-  let size = parse_size(&image_yaml["size"]);
-  let upper_left = parse_complex(&image_yaml["upperLeft"]);
-  let lower_right = parse_complex(&image_yaml["lowerRight"]);
-
+pub fn parse_image(input_filename: &String, image_yaml: &Yaml) -> super::Image {
   super::Image {
-    size: size,
-    upper_left: upper_left,
-    lower_right: lower_right,
+    input_filename: input_filename.clone(),
+    output_filename: build_output_filename(input_filename),
+    size: parse_size(&image_yaml["size"]),
+    upper_left: parse_complex(&image_yaml["upperLeft"]),
+    lower_right: parse_complex(&image_yaml["lowerRight"]),
   }
+}
+
+fn build_output_filename(input_filename: &String) -> String {
+  let file_stem = Path::new(input_filename).file_stem().unwrap();
+  let mut output_filename = PathBuf::new();
+  output_filename.push("images");
+  output_filename.push(file_stem);
+  output_filename.set_extension("png");
+  output_filename.as_os_str().to_str().unwrap().to_string()
 }
 
 fn parse_size(size: &Yaml) -> super::Size {
@@ -110,6 +118,8 @@ mod tests {
     let docs = YamlLoader::load_from_str(input).unwrap();
     assert_eq!(
       Image {
+        input_filename: "data/foobar.yml".to_string(),
+        output_filename: "images/foobar.png".to_string(),
         size: Size {
           width: 512,
           height: 384
@@ -117,7 +127,7 @@ mod tests {
         upper_left: Complex::new(-2.0, 1.2),
         lower_right: Complex::new(1.2, -1.2),
       },
-      parse_image(&docs[0]["image"])
+      parse_image(&String::from("data/foobar.yml"), &docs[0]["image"])
     );
   }
 
@@ -130,15 +140,11 @@ mod tests {
     "#;
     let docs = YamlLoader::load_from_str(input).unwrap();
     assert_eq!(
-      Image {
-        size: Size {
-          width: 1024,
-          height: 768
-        },
-        upper_left: Complex::new(-2.0, 1.2),
-        lower_right: Complex::new(1.2, -1.2),
+      Size {
+        width: 1024,
+        height: 768
       },
-      parse_image(&docs[0]["image"])
+      parse_image(&String::from("data/foobar.yml"), &docs[0]["image"]).size
     );
   }
 }
