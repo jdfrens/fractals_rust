@@ -1,3 +1,4 @@
+use core::str::FromStr;
 use num_complex::Complex;
 
 pub mod parser;
@@ -66,6 +67,23 @@ impl Image {
       self.left() + col as f64 * self.x_delta(),
       self.top() - row as f64 * self.y_delta(),
     )
+  }
+}
+
+impl FromStr for ColorSchemeType {
+  type Err = ();
+
+  fn from_str(s: &str) -> Result<ColorSchemeType, ()> {
+    match s {
+      "BlackOnWhite" => Ok(ColorSchemeType::BlackOnWhite),
+      "Blue" => Ok(ColorSchemeType::Blue),
+      "Gray" => Ok(ColorSchemeType::Gray),
+      "Green" => Ok(ColorSchemeType::Green),
+      "Random" => Ok(ColorSchemeType::Random),
+      "Red" => Ok(ColorSchemeType::Red),
+      "WhiteOnBlack" => Ok(ColorSchemeType::WhiteOnBlack),
+      _ => Err(()),
+    }
   }
 }
 
