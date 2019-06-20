@@ -18,6 +18,9 @@ pub fn parse(input_filename: &String) -> super::Job {
 pub fn parse_job(input_filename: &String, job_yaml: &Yaml) -> super::Job {
   super::Job {
     image: parse_image(input_filename, &job_yaml["image"]),
+    color_scheme: super::ColorScheme {
+      scheme_type: super::ColorSchemeType::Blue
+    }
   }
 }
 

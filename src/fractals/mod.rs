@@ -5,6 +5,7 @@ pub mod parser;
 #[derive(Debug, PartialEq)]
 pub struct Job {
   pub image: Image,
+  pub color_scheme: ColorScheme,
 }
 
 #[derive(Debug, PartialEq)]
@@ -20,6 +21,22 @@ pub struct Image {
   pub size: Size,
   pub upper_left: Complex<f64>,
   pub lower_right: Complex<f64>,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum ColorSchemeType {
+  BlackOnWhite,
+  Blue,
+  Gray,
+  Green,
+  Random,
+  Red,
+  WhiteOnBlack,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ColorScheme {
+  pub scheme_type: ColorSchemeType,
 }
 
 impl Image {
