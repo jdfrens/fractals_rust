@@ -1,5 +1,4 @@
 use fractals::parser::parse;
-use fractals::Image;
 use image::{ImageBuffer, Rgb};
 use num_complex::Complex;
 use std::env;
@@ -15,7 +14,7 @@ fn main() {
 
     for row in 0..job.image.size.height {
         for col in 0..job.image.size.width {
-            let iter = iterate(&job.image, col, row);
+            let iter = iterate(&job.image.complex_at(col, row));
             let pixel = image.get_pixel_mut(col, row);
             set_pixel(pixel, iter);
         }
@@ -24,9 +23,8 @@ fn main() {
     println!("wrote {}", job.image.output_filename);
 }
 
-fn iterate(image: &Image, col: u32, row: u32) -> u32 {
+fn iterate(c: &Complex<f64>) -> Iteration {
     let mut z = Complex::new(0.0, 0.0);
-    let c = image.complex_at(col, row);
     let mut iter = 0;
 
     while z.norm_sqr() < 4.0 && iter < 512 {
