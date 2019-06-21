@@ -70,12 +70,19 @@ impl Image {
 
 impl ColorScheme {
   pub fn color(&self, iter: Iteration) -> Rgb<u8> {
-    match iter {
-        Iteration::Inside { iterations: _ } => Rgb([0, 0, 0]),
-        Iteration::Outside { iterations: _ } => Rgb([255, 255, 255]),
+    match self {
+      ColorScheme::BlackOnWhite => match iter {
+        Iteration::Inside { iterations: _ } => Ok(Rgb([0, 0, 0])),
+        Iteration::Outside { iterations: _ } => Ok(Rgb([255, 255, 255])),
+      },
+      ColorScheme::WhiteOnBlack => match iter {
+        Iteration::Inside { iterations: _ } => Ok(Rgb([255, 255, 255])),
+        Iteration::Outside { iterations: _ } => Ok(Rgb([0, 0, 0])),
+      },
+      &_ => Err(()),
     }
+    .unwrap()
   }
-
 }
 
 impl FromStr for ColorScheme {
