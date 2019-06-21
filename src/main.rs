@@ -1,3 +1,4 @@
+use fractals::escape_time::Iteration;
 use fractals::parser::parse;
 use image::{ImageBuffer, Rgb};
 use num_complex::Complex;
@@ -31,13 +32,17 @@ fn iterate(c: &Complex<f64>) -> Iteration {
         z = z * z + c;
         iter = iter + 1;
     }
-    iter
+    if iter > 512 {
+        Iteration::Inside { iterations: iter }
+    } else {
+        Iteration::Outside { iterations: iter }
+    }
 }
 
-fn set_pixel(pixel: &mut Rgb<u8>, iter: u32) {
-    if iter >= 512 {
-        *pixel = Rgb([255, 255, 255]);
-    } else {
-        *pixel = Rgb([0, 0, 0]);
-    }
+fn set_pixel(pixel: &mut Rgb<u8>, iter: Iteration) {
+    let color = match iter {
+        Iteration::Inside { iterations: _ } => Rgb([255, 255, 255]),
+        Iteration::Outside { iterations: _ } => Rgb([0, 0, 0]),
+    };
+    *pixel = color;
 }

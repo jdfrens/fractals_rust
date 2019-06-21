@@ -1,6 +1,7 @@
 use core::str::FromStr;
 use num_complex::Complex;
 
+pub mod escape_time;
 pub mod parser;
 
 #[derive(Debug, PartialEq)]
