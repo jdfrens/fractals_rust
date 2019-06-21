@@ -1,4 +1,6 @@
+use self::escape_time::Iteration;
 use core::str::FromStr;
+use image::Rgb;
 use num_complex::Complex;
 
 pub mod escape_time;
@@ -64,6 +66,16 @@ impl Image {
       self.top() - row as f64 * self.y_delta(),
     )
   }
+}
+
+impl ColorScheme {
+  pub fn color(&self, iter: Iteration) -> Rgb<u8> {
+    match iter {
+        Iteration::Inside { iterations: _ } => Rgb([0, 0, 0]),
+        Iteration::Outside { iterations: _ } => Rgb([255, 255, 255]),
+    }
+  }
+
 }
 
 impl FromStr for ColorScheme {
