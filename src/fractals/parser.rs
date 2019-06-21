@@ -1,11 +1,13 @@
-use core::str::FromStr;
 use num_complex::Complex;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use yaml_rust::{Yaml, YamlLoader};
 
-pub fn parse(input_filename: &String) -> super::Job {
+use super::{ColorScheme, Image, Job, Size};
+use super::ColorScheme::*;
+
+pub fn parse(input_filename: &String) -> Job {
   let mut file = File::open(input_filename).expect("Unable to open file");
   let mut contents = String::new();
 
@@ -16,15 +18,15 @@ pub fn parse(input_filename: &String) -> super::Job {
   parse_job(input_filename, &docs[0])
 }
 
-pub fn parse_job(input_filename: &String, job_yaml: &Yaml) -> super::Job {
-  super::Job {
+pub fn parse_job(input_filename: &String, job_yaml: &Yaml) -> Job {
+  Job {
     image: parse_image(input_filename, &job_yaml["image"]),
     color_scheme: parse_color_scheme(&job_yaml["color_scheme"]),
   }
 }
 
-pub fn parse_image(input_filename: &String, image_yaml: &Yaml) -> super::Image {
-  super::Image {
+pub fn parse_image(input_filename: &String, image_yaml: &Yaml) -> Image {
+  Image {
     input_filename: input_filename.clone(),
     output_filename: build_output_filename(input_filename),
     size: parse_size(&image_yaml["size"]),
@@ -42,7 +44,7 @@ fn build_output_filename(input_filename: &String) -> String {
   output_filename.as_os_str().to_str().unwrap().to_string()
 }
 
-fn parse_size(size: &Yaml) -> super::Size {
+fn parse_size(size: &Yaml) -> Size {
   let size_str: &str = match size.as_str() {
     Some(s) => s,
     None => &"1024x768",
@@ -53,7 +55,7 @@ fn parse_size(size: &Yaml) -> super::Size {
     .map(|x| x.parse::<u32>().unwrap())
     .collect();
 
-  super::Size {
+  Size {
     width: size_vec[0],
     height: size_vec[1],
   }
@@ -71,14 +73,17 @@ fn parse_complex(complex_value: &Yaml) -> Complex<f64> {
   Complex::new(complex_vec[0], complex_vec[1])
 }
 
-fn parse_color_scheme(color_scheme_yaml: &Yaml) -> super::ColorScheme {
-  super::ColorScheme {
-    scheme_type: parse_color_scheme_type(&color_scheme_yaml["type"]),
-  }
-}
-fn parse_color_scheme_type(color_scheme_type_str: &Yaml) -> super::ColorSchemeType {
-  let str = color_scheme_type_str.as_str().unwrap();
-  super::ColorSchemeType::from_str(str).unwrap()
+fn parse_color_scheme(color_scheme_yaml: &Yaml) -> ColorScheme {
+  match color_scheme_yaml["type"].as_str().unwrap() {
+    "BlackOnWhite" => Ok(BlackOnWhite),
+    "Blue" => Ok(Blue),
+    "Gray" => Ok(Gray),
+    "Green" => Ok(Green),
+    "Random" => Ok(Random),
+    "Red" => Ok(Red),
+    "WhiteOnBlack" => Ok(WhiteOnBlack),
+    _ => Err(()),
+  }.unwrap()
 }
 
 #[cfg(test)]
@@ -168,9 +173,7 @@ mod tests {
     "#;
     let docs = YamlLoader::load_from_str(input).unwrap();
     assert_eq!(
-      ColorScheme {
-        scheme_type: ColorSchemeType::BlackOnWhite
-      },
+      ColorScheme::BlackOnWhite,
       parse_color_scheme(&docs[0]["color_scheme"])
     );
 
@@ -180,9 +183,7 @@ mod tests {
     "#;
     let docs = YamlLoader::load_from_str(input).unwrap();
     assert_eq!(
-      ColorScheme {
-        scheme_type: ColorSchemeType::Green
-      },
+      ColorScheme::Green,
       parse_color_scheme(&docs[0]["color_scheme"])
     );
   }

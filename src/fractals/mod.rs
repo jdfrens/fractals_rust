@@ -1,6 +1,9 @@
+use self::escape_time::Iteration;
 use core::str::FromStr;
+use image::Rgb;
 use num_complex::Complex;
 
+pub mod escape_time;
 pub mod parser;
 
 #[derive(Debug, PartialEq)]
@@ -25,7 +28,7 @@ pub struct Image {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum ColorSchemeType {
+pub enum ColorScheme {
   BlackOnWhite,
   Blue,
   Gray,
@@ -33,11 +36,6 @@ pub enum ColorSchemeType {
   Random,
   Red,
   WhiteOnBlack,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct ColorScheme {
-  pub scheme_type: ColorSchemeType,
 }
 
 impl Image {
@@ -70,18 +68,35 @@ impl Image {
   }
 }
 
-impl FromStr for ColorSchemeType {
+impl ColorScheme {
+  pub fn color(&self, iter: Iteration) -> Rgb<u8> {
+    match self {
+      ColorScheme::BlackOnWhite => match iter {
+        Iteration::Inside { iterations: _ } => Ok(Rgb([0, 0, 0])),
+        Iteration::Outside { iterations: _ } => Ok(Rgb([255, 255, 255])),
+      },
+      ColorScheme::WhiteOnBlack => match iter {
+        Iteration::Inside { iterations: _ } => Ok(Rgb([255, 255, 255])),
+        Iteration::Outside { iterations: _ } => Ok(Rgb([0, 0, 0])),
+      },
+      &_ => Err(()),
+    }
+    .unwrap()
+  }
+}
+
+impl FromStr for ColorScheme {
   type Err = ();
 
-  fn from_str(s: &str) -> Result<ColorSchemeType, ()> {
+  fn from_str(s: &str) -> Result<ColorScheme, ()> {
     match s {
-      "BlackOnWhite" => Ok(ColorSchemeType::BlackOnWhite),
-      "Blue" => Ok(ColorSchemeType::Blue),
-      "Gray" => Ok(ColorSchemeType::Gray),
-      "Green" => Ok(ColorSchemeType::Green),
-      "Random" => Ok(ColorSchemeType::Random),
-      "Red" => Ok(ColorSchemeType::Red),
-      "WhiteOnBlack" => Ok(ColorSchemeType::WhiteOnBlack),
+      "BlackOnWhite" => Ok(ColorScheme::BlackOnWhite),
+      "Blue" => Ok(ColorScheme::Blue),
+      "Gray" => Ok(ColorScheme::Gray),
+      "Green" => Ok(ColorScheme::Green),
+      "Random" => Ok(ColorScheme::Random),
+      "Red" => Ok(ColorScheme::Red),
+      "WhiteOnBlack" => Ok(ColorScheme::WhiteOnBlack),
       _ => Err(()),
     }
   }
