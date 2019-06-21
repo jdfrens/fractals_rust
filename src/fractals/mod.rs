@@ -1,3 +1,4 @@
+use core::str::FromStr;
 use num_complex::Complex;
 
 pub mod parser;
@@ -5,6 +6,7 @@ pub mod parser;
 #[derive(Debug, PartialEq)]
 pub struct Job {
   pub image: Image,
+  pub color_scheme: ColorScheme,
 }
 
 #[derive(Debug, PartialEq)]
@@ -20,6 +22,22 @@ pub struct Image {
   pub size: Size,
   pub upper_left: Complex<f64>,
   pub lower_right: Complex<f64>,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum ColorSchemeType {
+  BlackOnWhite,
+  Blue,
+  Gray,
+  Green,
+  Random,
+  Red,
+  WhiteOnBlack,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ColorScheme {
+  pub scheme_type: ColorSchemeType,
 }
 
 impl Image {
@@ -49,6 +67,23 @@ impl Image {
       self.left() + col as f64 * self.x_delta(),
       self.top() - row as f64 * self.y_delta(),
     )
+  }
+}
+
+impl FromStr for ColorSchemeType {
+  type Err = ();
+
+  fn from_str(s: &str) -> Result<ColorSchemeType, ()> {
+    match s {
+      "BlackOnWhite" => Ok(ColorSchemeType::BlackOnWhite),
+      "Blue" => Ok(ColorSchemeType::Blue),
+      "Gray" => Ok(ColorSchemeType::Gray),
+      "Green" => Ok(ColorSchemeType::Green),
+      "Random" => Ok(ColorSchemeType::Random),
+      "Red" => Ok(ColorSchemeType::Red),
+      "WhiteOnBlack" => Ok(ColorSchemeType::WhiteOnBlack),
+      _ => Err(()),
+    }
   }
 }
 

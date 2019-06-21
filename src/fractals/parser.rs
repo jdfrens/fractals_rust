@@ -1,3 +1,4 @@
+use core::str::FromStr;
 use num_complex::Complex;
 use std::fs::File;
 use std::io::Read;
@@ -18,6 +19,7 @@ pub fn parse(input_filename: &String) -> super::Job {
 pub fn parse_job(input_filename: &String, job_yaml: &Yaml) -> super::Job {
   super::Job {
     image: parse_image(input_filename, &job_yaml["image"]),
+    color_scheme: parse_color_scheme(&job_yaml["color_scheme"]),
   }
 }
 
@@ -67,6 +69,16 @@ fn parse_complex(complex_value: &Yaml) -> Complex<f64> {
     .collect();
 
   Complex::new(complex_vec[0], complex_vec[1])
+}
+
+fn parse_color_scheme(color_scheme_yaml: &Yaml) -> super::ColorScheme {
+  super::ColorScheme {
+    scheme_type: parse_color_scheme_type(&color_scheme_yaml["type"]),
+  }
+}
+fn parse_color_scheme_type(color_scheme_type_str: &Yaml) -> super::ColorSchemeType {
+  let str = color_scheme_type_str.as_str().unwrap();
+  super::ColorSchemeType::from_str(str).unwrap()
 }
 
 #[cfg(test)]
@@ -145,6 +157,33 @@ mod tests {
         height: 768
       },
       parse_image(&String::from("data/foobar.yml"), &docs[0]["image"]).size
+    );
+  }
+
+  #[test]
+  fn test_parse_color_scheme() {
+    let input = r#"
+      color_scheme:
+        type: BlackOnWhite
+    "#;
+    let docs = YamlLoader::load_from_str(input).unwrap();
+    assert_eq!(
+      ColorScheme {
+        scheme_type: ColorSchemeType::BlackOnWhite
+      },
+      parse_color_scheme(&docs[0]["color_scheme"])
+    );
+
+    let input = r#"
+      color_scheme:
+        type: Green
+    "#;
+    let docs = YamlLoader::load_from_str(input).unwrap();
+    assert_eq!(
+      ColorScheme {
+        scheme_type: ColorSchemeType::Green
+      },
+      parse_color_scheme(&docs[0]["color_scheme"])
     );
   }
 }
