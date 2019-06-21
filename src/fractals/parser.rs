@@ -5,7 +5,9 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use yaml_rust::{Yaml, YamlLoader};
 
-pub fn parse(input_filename: &String) -> super::Job {
+use super::{ColorScheme, ColorSchemeType, Image, Job, Size};
+
+pub fn parse(input_filename: &String) -> Job {
   let mut file = File::open(input_filename).expect("Unable to open file");
   let mut contents = String::new();
 
@@ -16,15 +18,15 @@ pub fn parse(input_filename: &String) -> super::Job {
   parse_job(input_filename, &docs[0])
 }
 
-pub fn parse_job(input_filename: &String, job_yaml: &Yaml) -> super::Job {
-  super::Job {
+pub fn parse_job(input_filename: &String, job_yaml: &Yaml) -> Job {
+  Job {
     image: parse_image(input_filename, &job_yaml["image"]),
     color_scheme: parse_color_scheme(&job_yaml["color_scheme"]),
   }
 }
 
-pub fn parse_image(input_filename: &String, image_yaml: &Yaml) -> super::Image {
-  super::Image {
+pub fn parse_image(input_filename: &String, image_yaml: &Yaml) -> Image {
+  Image {
     input_filename: input_filename.clone(),
     output_filename: build_output_filename(input_filename),
     size: parse_size(&image_yaml["size"]),
@@ -42,7 +44,7 @@ fn build_output_filename(input_filename: &String) -> String {
   output_filename.as_os_str().to_str().unwrap().to_string()
 }
 
-fn parse_size(size: &Yaml) -> super::Size {
+fn parse_size(size: &Yaml) -> Size {
   let size_str: &str = match size.as_str() {
     Some(s) => s,
     None => &"1024x768",
@@ -53,7 +55,7 @@ fn parse_size(size: &Yaml) -> super::Size {
     .map(|x| x.parse::<u32>().unwrap())
     .collect();
 
-  super::Size {
+  Size {
     width: size_vec[0],
     height: size_vec[1],
   }
@@ -71,14 +73,14 @@ fn parse_complex(complex_value: &Yaml) -> Complex<f64> {
   Complex::new(complex_vec[0], complex_vec[1])
 }
 
-fn parse_color_scheme(color_scheme_yaml: &Yaml) -> super::ColorScheme {
-  super::ColorScheme {
+fn parse_color_scheme(color_scheme_yaml: &Yaml) -> ColorScheme {
+  ColorScheme {
     scheme_type: parse_color_scheme_type(&color_scheme_yaml["type"]),
   }
 }
-fn parse_color_scheme_type(color_scheme_type_str: &Yaml) -> super::ColorSchemeType {
+fn parse_color_scheme_type(color_scheme_type_str: &Yaml) -> ColorSchemeType {
   let str = color_scheme_type_str.as_str().unwrap();
-  super::ColorSchemeType::from_str(str).unwrap()
+  ColorSchemeType::from_str(str).unwrap()
 }
 
 #[cfg(test)]

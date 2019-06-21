@@ -1,3 +1,6 @@
+use fractals::parser::parse;
+use fractals::Image;
+use image::{ImageBuffer, Rgb};
 use num_complex::Complex;
 use std::env;
 
@@ -6,10 +9,9 @@ mod fractals;
 fn main() {
     let args: Vec<String> = env::args().collect();
     let input_filename = &args[1];
-    let job = fractals::parser::parse(input_filename);
+    let job = parse(input_filename);
 
-    let mut image =
-        image::ImageBuffer::new(job.image.size.width as u32, job.image.size.height as u32);
+    let mut image = ImageBuffer::new(job.image.size.width as u32, job.image.size.height as u32);
 
     for row in 0..job.image.size.height {
         for col in 0..job.image.size.width {
@@ -22,7 +24,7 @@ fn main() {
     println!("wrote {}", job.image.output_filename);
 }
 
-fn iterate(image: &fractals::Image, col: u32, row: u32) -> u32 {
+fn iterate(image: &Image, col: u32, row: u32) -> u32 {
     let mut z = Complex::new(0.0, 0.0);
     let c = image.complex_at(col, row);
     let mut iter = 0;
@@ -34,10 +36,10 @@ fn iterate(image: &fractals::Image, col: u32, row: u32) -> u32 {
     iter
 }
 
-fn set_pixel(pixel: &mut image::Rgb<u8>, iter: u32) {
+fn set_pixel(pixel: &mut Rgb<u8>, iter: u32) {
     if iter >= 512 {
-        *pixel = image::Rgb([255, 255, 255]);
+        *pixel = Rgb([255, 255, 255]);
     } else {
-        *pixel = image::Rgb([0, 0, 0]);
+        *pixel = Rgb([0, 0, 0]);
     }
 }
