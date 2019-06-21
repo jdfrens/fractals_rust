@@ -26,7 +26,7 @@ pub struct Image {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum ColorSchemeType {
+pub enum ColorScheme {
   BlackOnWhite,
   Blue,
   Gray,
@@ -34,11 +34,6 @@ pub enum ColorSchemeType {
   Random,
   Red,
   WhiteOnBlack,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct ColorScheme {
-  pub scheme_type: ColorSchemeType,
 }
 
 impl Image {
@@ -71,18 +66,18 @@ impl Image {
   }
 }
 
-impl FromStr for ColorSchemeType {
+impl FromStr for ColorScheme {
   type Err = ();
 
-  fn from_str(s: &str) -> Result<ColorSchemeType, ()> {
+  fn from_str(s: &str) -> Result<ColorScheme, ()> {
     match s {
-      "BlackOnWhite" => Ok(ColorSchemeType::BlackOnWhite),
-      "Blue" => Ok(ColorSchemeType::Blue),
-      "Gray" => Ok(ColorSchemeType::Gray),
-      "Green" => Ok(ColorSchemeType::Green),
-      "Random" => Ok(ColorSchemeType::Random),
-      "Red" => Ok(ColorSchemeType::Red),
-      "WhiteOnBlack" => Ok(ColorSchemeType::WhiteOnBlack),
+      "BlackOnWhite" => Ok(ColorScheme::BlackOnWhite),
+      "Blue" => Ok(ColorScheme::Blue),
+      "Gray" => Ok(ColorScheme::Gray),
+      "Green" => Ok(ColorScheme::Green),
+      "Random" => Ok(ColorScheme::Random),
+      "Red" => Ok(ColorScheme::Red),
+      "WhiteOnBlack" => Ok(ColorScheme::WhiteOnBlack),
       _ => Err(()),
     }
   }

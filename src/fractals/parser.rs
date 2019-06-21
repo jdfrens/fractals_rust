@@ -1,11 +1,11 @@
-use core::str::FromStr;
 use num_complex::Complex;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use yaml_rust::{Yaml, YamlLoader};
 
-use super::{ColorScheme, ColorSchemeType, Image, Job, Size};
+use super::{ColorScheme, Image, Job, Size};
+use super::ColorScheme::*;
 
 pub fn parse(input_filename: &String) -> Job {
   let mut file = File::open(input_filename).expect("Unable to open file");
@@ -74,13 +74,16 @@ fn parse_complex(complex_value: &Yaml) -> Complex<f64> {
 }
 
 fn parse_color_scheme(color_scheme_yaml: &Yaml) -> ColorScheme {
-  ColorScheme {
-    scheme_type: parse_color_scheme_type(&color_scheme_yaml["type"]),
-  }
-}
-fn parse_color_scheme_type(color_scheme_type_str: &Yaml) -> ColorSchemeType {
-  let str = color_scheme_type_str.as_str().unwrap();
-  ColorSchemeType::from_str(str).unwrap()
+  match color_scheme_yaml["type"].as_str().unwrap() {
+    "BlackOnWhite" => Ok(BlackOnWhite),
+    "Blue" => Ok(Blue),
+    "Gray" => Ok(Gray),
+    "Green" => Ok(Green),
+    "Random" => Ok(Random),
+    "Red" => Ok(Red),
+    "WhiteOnBlack" => Ok(WhiteOnBlack),
+    _ => Err(()),
+  }.unwrap()
 }
 
 #[cfg(test)]
@@ -170,9 +173,7 @@ mod tests {
     "#;
     let docs = YamlLoader::load_from_str(input).unwrap();
     assert_eq!(
-      ColorScheme {
-        scheme_type: ColorSchemeType::BlackOnWhite
-      },
+      ColorScheme::BlackOnWhite,
       parse_color_scheme(&docs[0]["color_scheme"])
     );
 
@@ -182,9 +183,7 @@ mod tests {
     "#;
     let docs = YamlLoader::load_from_str(input).unwrap();
     assert_eq!(
-      ColorScheme {
-        scheme_type: ColorSchemeType::Green
-      },
+      ColorScheme::Green,
       parse_color_scheme(&docs[0]["color_scheme"])
     );
   }
