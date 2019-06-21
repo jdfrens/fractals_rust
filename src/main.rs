@@ -1,7 +1,6 @@
-use fractals::escape_time::Iteration;
+use fractals::escape_time::{iterate, Iteration};
 use fractals::parser::parse;
 use image::{ImageBuffer, Rgb};
-use num_complex::Complex;
 use std::env;
 
 mod fractals;
@@ -22,21 +21,6 @@ fn main() {
     }
     image.save(&job.image.output_filename).unwrap();
     println!("wrote {}", job.image.output_filename);
-}
-
-fn iterate(c: &Complex<f64>) -> Iteration {
-    let mut z = Complex::new(0.0, 0.0);
-    let mut iter = 0;
-
-    while z.norm_sqr() < 4.0 && iter < 512 {
-        z = z * z + c;
-        iter = iter + 1;
-    }
-    if iter > 512 {
-        Iteration::Inside { iterations: iter }
-    } else {
-        Iteration::Outside { iterations: iter }
-    }
 }
 
 fn set_pixel(pixel: &mut Rgb<u8>, iter: Iteration) {
