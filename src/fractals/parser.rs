@@ -4,8 +4,11 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use yaml_rust::{Yaml, YamlLoader};
 
-use super::{ColorScheme, Image, Job, Size};
-use super::ColorScheme::*;
+use super::color_scheme::ColorScheme;
+use super::color_scheme::ColorScheme::*;
+use super::image::Image;
+use super::Job;
+use super::size::Size;
 
 pub fn parse(input_filename: &String) -> Job {
   let mut file = File::open(input_filename).expect("Unable to open file");
@@ -88,7 +91,6 @@ fn parse_color_scheme(color_scheme_yaml: &Yaml) -> ColorScheme {
 
 #[cfg(test)]
 mod tests {
-  use super::super::*;
   use super::*;
 
   #[test]
