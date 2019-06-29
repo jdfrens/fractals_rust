@@ -2,6 +2,7 @@ use ::image::Rgb;
 use core::str::FromStr;
 
 use super::escape_time::Iteration;
+use super::warp_pov::warp_pov;
 
 #[derive(Debug, PartialEq)]
 pub enum ColorScheme {
@@ -21,6 +22,9 @@ impl ColorScheme {
         Iteration::Inside { iterations: _ } => Ok(Rgb([0, 0, 0])),
         Iteration::Outside { iterations: _ } => Ok(Rgb([255, 255, 255])),
       },
+      ColorScheme::Blue => warp_pov(self, iter),
+      ColorScheme::Green => warp_pov(self, iter),
+      ColorScheme::Red => warp_pov(self, iter),
       ColorScheme::WhiteOnBlack => match iter {
         Iteration::Inside { iterations: _ } => Ok(Rgb([255, 255, 255])),
         Iteration::Outside { iterations: _ } => Ok(Rgb([0, 0, 0])),
