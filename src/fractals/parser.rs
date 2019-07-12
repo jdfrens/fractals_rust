@@ -91,9 +91,9 @@ fn parse_color_scheme(color_scheme_yaml: &Yaml) -> Box<ColorScheme> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::color_scheme::Color;
     use super::super::escape_time::Iteration;
     use super::*;
-    use ::image::Rgb;
 
     #[test]
     fn test_parse_complex() {
@@ -177,7 +177,7 @@ mod tests {
         let docs = YamlLoader::load_from_str(input).unwrap();
         let cs = parse_color_scheme(&docs[0]["color_scheme"]);
         assert_eq!(
-            Rgb([0, 0, 0]),
+            Color::new(0.0, 0.0, 0.0),
             cs.color(Iteration::Inside { iterations: 200 })
         );
 
@@ -188,7 +188,7 @@ mod tests {
         let docs = YamlLoader::load_from_str(input).unwrap();
         let cs = parse_color_scheme(&docs[0]["color_scheme"]);
         assert_eq!(
-            Rgb([175, 255, 175]),
+            Color::new(0.6875, 1.0, 0.6875),
             cs.color(Iteration::Outside { iterations: 432 })
         );
     }

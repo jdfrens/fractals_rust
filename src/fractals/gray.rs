@@ -1,16 +1,14 @@
-use ::image::Rgb;
-
-use super::color_scheme::ColorScheme;
+use super::color_scheme::{Color, ColorScheme};
 use super::escape_time::Iteration;
 
 #[derive(Debug, PartialEq)]
 pub struct BlackOnWhite {}
 
 impl ColorScheme for BlackOnWhite {
-    fn color(&self, iter: Iteration) -> Rgb<u8> {
+    fn color(&self, iter: Iteration) -> Color {
         match iter {
-            Iteration::Inside { .. } => Rgb([0, 0, 0]),
-            Iteration::Outside { .. } => Rgb([255, 255, 255]),
+            Iteration::Inside { .. } => Color::new(0.0, 0.0, 0.0),
+            Iteration::Outside { .. } => Color::new(1.0, 1.0, 1.0),
         }
     }
 }
@@ -19,9 +17,9 @@ impl ColorScheme for BlackOnWhite {
 pub struct Gray {}
 
 impl ColorScheme for Gray {
-    fn color(&self, iter: Iteration) -> Rgb<u8> {
+    fn color(&self, iter: Iteration) -> Color {
         match iter {
-            Iteration::Inside { .. } => Rgb([0, 0, 0]),
+            Iteration::Inside { .. } => Color::new(0.0, 0.0, 0.0),
             Iteration::Outside { iterations } => gray_scale(iterations),
         }
     }
@@ -31,18 +29,17 @@ impl ColorScheme for Gray {
 pub struct WhiteOnBlack {}
 
 impl ColorScheme for WhiteOnBlack {
-    fn color(&self, iter: Iteration) -> Rgb<u8> {
+    fn color(&self, iter: Iteration) -> Color {
         match iter {
-            Iteration::Inside { .. } => Rgb([255, 255, 255]),
-            Iteration::Outside { .. } => Rgb([0, 0, 0]),
+            Iteration::Inside { .. } => Color::new(1.0, 1.0, 1.0),
+            Iteration::Outside { .. } => Color::new(0.0, 0.0, 0.0),
         }
     }
 }
 
-fn gray_scale(iterations: u32) -> Rgb<u8> {
-    let factor = (iterations as f64 / 512.0).sqrt();
-    let intensity = (factor * 255.0) as u8;
-    Rgb([intensity, intensity, intensity])
+fn gray_scale(iterations: u32) -> Color {
+    let intensity = (iterations as f32 / 512.0).sqrt();
+    Color::new(intensity, intensity, intensity)
 }
 
 #[cfg(test)]
@@ -71,14 +68,14 @@ mod tests {
           fn inside_always_black(iterations in 0u32..1024)  {
             let cs = BlackOnWhite {};
             let color = cs.color(outside(iterations));
-            prop_assert_eq!(Rgb([255, 255, 255]), color);
+            prop_assert_eq!(Color::new(1.0, 1.0, 1.0), color);
           }
 
           #[test]
           fn outside_always_white(iterations in 0u32..1024)  {
             let cs = BlackOnWhite {};
             let color = cs.color(inside(iterations));
-                prop_assert_eq!(Rgb([0, 0, 0]), color);
+                prop_assert_eq!(Color::new(0.0, 0.0, 0.0), color);
           }
         }
     }
@@ -86,7 +83,6 @@ mod tests {
     mod gray {
         use super::super::*;
         use super::*;
-        use ::image::Pixel;
         use proptest::prelude::*;
 
         proptest! {
@@ -94,7 +90,7 @@ mod tests {
             fn inside_always_black(iterations in 0u32..1024)  {
                 let cs = Gray {};
                 let color = cs.color(inside(iterations));
-                prop_assert_eq!(Rgb([0, 0, 0]), color);
+                prop_assert_eq!(Color::new(0.0, 0.0, 0.0), color);
             }
         }
 
@@ -103,16 +99,10 @@ mod tests {
             let cs = Gray {};
 
             let color = cs.color(outside(128));
-            let channels = color.channels();
-            assert_eq!(127, channels[0]);
-            assert_eq!(127, channels[1]);
-            assert_eq!(127, channels[2]);
+            assert_eq!(Color::new(0.5, 0.5, 0.5), color);
 
             let color = cs.color(outside(64));
-            let channels = color.channels();
-            assert_eq!(90, channels[0]);
-            assert_eq!(90, channels[1]);
-            assert_eq!(90, channels[2]);
+            assert_eq!(Color::new(0.35355338, 0.35355338, 0.35355338), color);
         }
     }
 
@@ -126,14 +116,14 @@ mod tests {
             fn inside_always_white(iterations in 0u32..1024)  {
                 let cs = WhiteOnBlack {};
                 let color = cs.color(inside(iterations));
-                prop_assert_eq!(Rgb([255, 255, 255]), color);
+                prop_assert_eq!(Color::new(1.0, 1.0, 1.0), color);
             }
 
             #[test]
             fn outside_always_black(iterations in 0u32..1024)  {
                 let cs = WhiteOnBlack {};
                 let color = cs.color(outside(iterations));
-                prop_assert_eq!(Rgb([0, 0, 0]), color);
+                prop_assert_eq!(Color::new(0.0, 0.0, 0.0), color);
             }
         }
     }

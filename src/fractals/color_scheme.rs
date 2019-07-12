@@ -28,5 +28,5 @@ impl Color {
 }
 
 pub trait ColorScheme: std::fmt::Debug {
-  fn color(&self, iter: Iteration) -> Rgb<u8>;
+  fn color(&self, iter: Iteration) -> Color;
 }
