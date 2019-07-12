@@ -3,6 +3,6 @@ use super::image::Image;
 
 #[derive(Debug, PartialEq)]
 pub struct Job {
-  pub image: Image,
-  pub color_scheme: ColorScheme,
+    pub image: Image,
+    pub color_scheme: Box<ColorScheme>,
 }
