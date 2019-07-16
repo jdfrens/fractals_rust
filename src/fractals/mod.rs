@@ -3,6 +3,7 @@ pub mod escape_time;
 mod gray;
 pub mod image;
 pub mod job;
+mod mandelbrot;
 pub mod parser;
 pub mod size;
 mod warp_pov;
