@@ -2,12 +2,18 @@ use num_complex::Complex;
 
 #[derive(Debug, PartialEq)]
 pub enum Iteration {
-    Inside { iterations: u32, max_iterations: u32 },
-    Outside { iterations: u32, max_iterations: u32 },
+    Inside {
+        iterations: u32,
+        max_iterations: u32,
+    },
+    Outside {
+        iterations: u32,
+        max_iterations: u32,
+    },
 }
 
 pub fn iterate(c: &Complex<f64>) -> Iteration {
-    let max_iterations  = 512;
+    let max_iterations = 512;
     let mut z = Complex::new(0.0, 0.0);
     let mut iterations = 0;
 
@@ -16,9 +22,15 @@ pub fn iterate(c: &Complex<f64>) -> Iteration {
         iterations = iterations + 1;
     }
     if iterations >= 512 {
-        Iteration::Inside { iterations, max_iterations }
+        Iteration::Inside {
+            iterations,
+            max_iterations,
+        }
     } else {
-        Iteration::Outside { iterations, max_iterations }
+        Iteration::Outside {
+            iterations,
+            max_iterations,
+        }
     }
 }
 
@@ -29,11 +41,17 @@ mod tests {
     #[test]
     fn test_iterate_inside() {
         assert_eq!(
-            Iteration::Inside { iterations: 512, max_iterations: 512 },
+            Iteration::Inside {
+                iterations: 512,
+                max_iterations: 512
+            },
             iterate(&Complex::new(0.0, 0.0))
         );
         assert_eq!(
-            Iteration::Inside { iterations: 512, max_iterations: 512 },
+            Iteration::Inside {
+                iterations: 512,
+                max_iterations: 512
+            },
             iterate(&Complex::new(0.2, 0.5))
         );
     }
@@ -41,11 +59,17 @@ mod tests {
     #[test]
     fn test_iterate_outside() {
         assert_eq!(
-            Iteration::Outside { iterations: 1, max_iterations: 512 },
+            Iteration::Outside {
+                iterations: 1,
+                max_iterations: 512
+            },
             iterate(&Complex::new(2.0, 2.0))
         );
         assert_eq!(
-            Iteration::Outside { iterations: 12, max_iterations: 512 },
+            Iteration::Outside {
+                iterations: 12,
+                max_iterations: 512
+            },
             iterate(&Complex::new(0.2, 0.6))
         );
     }
