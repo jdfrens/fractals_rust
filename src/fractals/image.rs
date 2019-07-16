@@ -1,4 +1,5 @@
 use super::size::Size;
+use ::image::{ImageBuffer, Rgb, RgbImage};
 use num_complex::Complex;
 
 #[derive(Debug, PartialEq)]
@@ -11,6 +12,19 @@ pub struct Image {
 }
 
 impl Image {
+    pub fn build(&self, fun: impl Fn(Complex<f64>) -> Rgb<u8>) -> RgbImage {
+        let mut image = ImageBuffer::new(self.size.width as u32, self.size.height as u32);
+        for row in 0..self.size.height {
+            for col in 0..self.size.width {
+                let z = self.complex_at(col, row);
+                let pixel_color = fun(z);
+                let pixel = image.get_pixel_mut(col, row);
+                *pixel = pixel_color;
+            }
+        }
+        image
+    }
+
     pub fn view_width(&self) -> f64 {
         (self.upper_left.re - self.lower_right.re).abs()
     }
