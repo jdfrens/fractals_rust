@@ -15,8 +15,10 @@ fn main() {
     for row in 0..job.image.size.height {
         for col in 0..job.image.size.width {
             let iter = iterate(&job.image.complex_at(col, row));
+            let color = job.color_scheme.color(iter);
+            let pixel_color = color.as_rgb();
             let pixel = image.get_pixel_mut(col, row);
-            *pixel = job.color_scheme.color(iter);
+            *pixel = pixel_color;
         }
     }
     image.save(&job.image.output_filename).unwrap();
