@@ -178,7 +178,7 @@ mod tests {
         let cs = parse_color_scheme(&docs[0]["color_scheme"]);
         assert_eq!(
             Color::new(0.0, 0.0, 0.0),
-            cs.color(Iteration::Inside { iterations: 200 })
+            cs.color(Iteration::Inside { iterations: 200, max_iterations: 512 })
         );
 
         let input = r#"
@@ -189,7 +189,7 @@ mod tests {
         let cs = parse_color_scheme(&docs[0]["color_scheme"]);
         assert_eq!(
             Color::new(0.6875, 1.0, 0.6875),
-            cs.color(Iteration::Outside { iterations: 432 })
+            cs.color(Iteration::Outside { iterations: 432, max_iterations: 512 })
         );
     }
 }

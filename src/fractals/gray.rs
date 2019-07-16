@@ -20,7 +20,7 @@ impl ColorScheme for Gray {
     fn color(&self, iter: Iteration) -> Color {
         match iter {
             Iteration::Inside { .. } => Color::new(0.0, 0.0, 0.0),
-            Iteration::Outside { iterations } => gray_scale(iterations),
+            Iteration::Outside { iterations, .. } => gray_scale(iterations),
         }
     }
 }
@@ -47,15 +47,11 @@ mod tests {
     use super::*;
 
     fn inside(iterations: u32) -> Iteration {
-        Iteration::Inside {
-            iterations: iterations,
-        }
+        Iteration::Inside { iterations: iterations, max_iterations: 512, }
     }
 
     fn outside(iterations: u32) -> Iteration {
-        Iteration::Outside {
-            iterations: iterations,
-        }
+        Iteration::Outside { iterations: iterations, max_iterations: 512 }
     }
 
     mod black_on_white {
