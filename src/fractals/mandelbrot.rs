@@ -1,6 +1,7 @@
 use super::escape_time::{EscapeTime, Iteration};
 use num_complex::Complex;
 
+#[derive(Debug)]
 pub struct Mandelbrot;
 
 impl EscapeTime for Mandelbrot {
