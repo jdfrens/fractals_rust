@@ -5,8 +5,11 @@ use std::path::{Path, PathBuf};
 use yaml_rust::{Yaml, YamlLoader};
 
 use super::color_scheme::ColorScheme;
+use super::escape_time::EscapeTime;
 use super::gray::{BlackOnWhite, Gray, WhiteOnBlack};
 use super::image::Image;
+use super::julia::Julia;
+use super::mandelbrot::Mandelbrot;
 use super::size::Size;
 use super::warp_pov::{Blue, Green, Red};
 use super::Job;
@@ -21,14 +24,26 @@ pub fn parse(input_filename: &String) -> Job {
     parse_job(input_filename, &docs[0])
 }
 
-pub fn parse_job(input_filename: &String, job_yaml: &Yaml) -> Job {
+fn parse_job(input_filename: &String, job_yaml: &Yaml) -> Job {
     Job {
+        fractal: parse_fractal(input_filename, &job_yaml["fractal"]),
         image: parse_image(input_filename, &job_yaml["image"]),
         color_scheme: parse_color_scheme(&job_yaml["color_scheme"]),
     }
 }
 
-pub fn parse_image(input_filename: &String, image_yaml: &Yaml) -> Image {
+fn parse_fractal(_input_filename: &String, fractal_yaml: &Yaml) -> Box<EscapeTime> {
+    match fractal_yaml["type"].as_str().unwrap() {
+        "Julia" => {
+            let c = parse_complex(&fractal_yaml["c"]);
+            return Box::new(Julia { c: c })
+            },
+        "Mandelbrot" => return Box::new(Mandelbrot {}),
+        _ => panic!("{:?} not a valid fractal", fractal_yaml),
+    }
+}
+
+fn parse_image(input_filename: &String, image_yaml: &Yaml) -> Image {
     Image {
         input_filename: input_filename.clone(),
         output_filename: build_output_filename(input_filename),
@@ -178,7 +193,10 @@ mod tests {
         let cs = parse_color_scheme(&docs[0]["color_scheme"]);
         assert_eq!(
             Color::new(0.0, 0.0, 0.0),
-            cs.color(Iteration::Inside { iterations: 200, max_iterations: 512 })
+            cs.color(Iteration::Inside {
+                iterations: 200,
+                max_iterations: 512
+            })
         );
 
         let input = r#"
@@ -189,7 +207,10 @@ mod tests {
         let cs = parse_color_scheme(&docs[0]["color_scheme"]);
         assert_eq!(
             Color::new(0.6875, 1.0, 0.6875),
-            cs.color(Iteration::Outside { iterations: 432, max_iterations: 512 })
+            cs.color(Iteration::Outside {
+                iterations: 432,
+                max_iterations: 512
+            })
         );
     }
 }

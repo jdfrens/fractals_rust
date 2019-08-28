@@ -47,11 +47,17 @@ mod tests {
     use super::*;
 
     fn inside(iterations: u32) -> Iteration {
-        Iteration::Inside { iterations: iterations, max_iterations: 512, }
+        Iteration::Inside {
+            iterations: iterations,
+            max_iterations: 512,
+        }
     }
 
     fn outside(iterations: u32) -> Iteration {
-        Iteration::Outside { iterations: iterations, max_iterations: 512 }
+        Iteration::Outside {
+            iterations: iterations,
+            max_iterations: 512,
+        }
     }
 
     mod black_on_white {
