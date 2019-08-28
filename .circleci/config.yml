@@ -7,6 +7,7 @@ jobs:
     steps:
       - checkout
       - run: cargo --version
+      - run: cargo build --features "strict"
       - run: cargo test
 workflows:
   version: 2

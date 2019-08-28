@@ -12,6 +12,6 @@ jobs:
     - name: Version check
       run: cargo --version
     - name: Build
-      run: cargo build
+      run: cargo build --features "strict"
     - name: Run tests
       run: cargo test
