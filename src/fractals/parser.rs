@@ -8,6 +8,7 @@ use super::color_scheme::ColorScheme;
 use super::escape_time::EscapeTime;
 use super::gray::{BlackOnWhite, Gray, WhiteOnBlack};
 use super::image::Image;
+use super::julia::Julia;
 use super::mandelbrot::Mandelbrot;
 use super::size::Size;
 use super::warp_pov::{Blue, Green, Red};
@@ -33,6 +34,10 @@ fn parse_job(input_filename: &String, job_yaml: &Yaml) -> Job {
 
 fn parse_fractal(_input_filename: &String, fractal_yaml: &Yaml) -> Box<EscapeTime> {
     match fractal_yaml["type"].as_str().unwrap() {
+        "Julia" => {
+            let c = parse_complex(&fractal_yaml["c"]);
+            return Box::new(Julia { c: c })
+            },
         "Mandelbrot" => return Box::new(Mandelbrot {}),
         _ => panic!("{:?} not a valid fractal", fractal_yaml),
     }
