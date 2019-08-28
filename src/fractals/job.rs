@@ -6,6 +6,7 @@ use super::parser;
 
 #[derive(Debug)]
 pub struct Job {
+    pub fractal: Box<EscapeTime>,
     pub image: Image,
     pub color_scheme: Box<ColorScheme>,
 }
