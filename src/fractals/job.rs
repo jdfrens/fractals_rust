@@ -16,7 +16,11 @@ impl Job {
     }
 
     pub fn generate(self) {
-      let Job { fractal, image, color_scheme } = self;
+        let Job {
+            fractal,
+            image,
+            color_scheme,
+        } = self;
         let image_buffer = image.build(|z| {
             let iter = fractal.iterate(&z);
             let color = color_scheme.color(iter);
