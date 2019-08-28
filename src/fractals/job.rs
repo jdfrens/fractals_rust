@@ -1,7 +1,6 @@
 use super::color_scheme::ColorScheme;
 use super::escape_time::EscapeTime;
 use super::image::Image;
-use super::mandelbrot::Mandelbrot;
 use super::parser;
 
 #[derive(Debug)]
@@ -17,13 +16,13 @@ impl Job {
     }
 
     pub fn generate(self) {
-        let m = Mandelbrot {};
-        let image = self.image.build(|z| {
-            let iter = m.iterate(&z);
-            let color = self.color_scheme.color(iter);
+      let Job { fractal, image, color_scheme } = self;
+        let image_buffer = image.build(|z| {
+            let iter = fractal.iterate(&z);
+            let color = color_scheme.color(iter);
             color.as_rgb()
         });
-        image.save(&self.image.output_filename).unwrap();
-        println!("wrote {}", self.image.output_filename);
+        image_buffer.save(&image.output_filename).unwrap();
+        println!("wrote {}", image.output_filename);
     }
 }
