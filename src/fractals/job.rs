@@ -5,9 +5,9 @@ use super::parser;
 
 #[derive(Debug)]
 pub struct Job {
-    pub fractal: Box<EscapeTime>,
+    pub fractal: Box<dyn EscapeTime>,
     pub image: Image,
-    pub color_scheme: Box<ColorScheme>,
+    pub color_scheme: Box<dyn ColorScheme>,
 }
 
 impl Job {
@@ -16,7 +16,11 @@ impl Job {
     }
 
     pub fn generate(self) {
-      let Job { fractal, image, color_scheme } = self;
+        let Job {
+            fractal,
+            image,
+            color_scheme,
+        } = self;
         let image_buffer = image.build(|z| {
             let iter = fractal.iterate(&z);
             let color = color_scheme.color(iter);

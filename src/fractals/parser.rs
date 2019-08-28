@@ -32,12 +32,12 @@ fn parse_job(input_filename: &String, job_yaml: &Yaml) -> Job {
     }
 }
 
-fn parse_fractal(_input_filename: &String, fractal_yaml: &Yaml) -> Box<EscapeTime> {
+fn parse_fractal(_input_filename: &String, fractal_yaml: &Yaml) -> Box<dyn EscapeTime> {
     match fractal_yaml["type"].as_str().unwrap() {
         "Julia" => {
             let c = parse_complex(&fractal_yaml["c"]);
-            return Box::new(Julia { c: c })
-            },
+            return Box::new(Julia { c: c });
+        }
         "Mandelbrot" => return Box::new(Mandelbrot {}),
         _ => panic!("{:?} not a valid fractal", fractal_yaml),
     }
@@ -91,7 +91,7 @@ fn parse_complex(complex_value: &Yaml) -> Complex<f64> {
     Complex::new(complex_vec[0], complex_vec[1])
 }
 
-fn parse_color_scheme(color_scheme_yaml: &Yaml) -> Box<ColorScheme> {
+fn parse_color_scheme(color_scheme_yaml: &Yaml) -> Box<dyn ColorScheme> {
     match color_scheme_yaml["type"].as_str().unwrap() {
         "BlackOnWhite" => return Box::new(BlackOnWhite {}),
         "Blue" => return Box::new(Blue {}),
