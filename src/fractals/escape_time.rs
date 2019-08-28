@@ -1,5 +1,9 @@
 use num_complex::Complex;
 
+pub trait EscapeTime: std::fmt::Debug {
+    fn iterate(&self, c: &Complex<f64>) -> Iteration;
+}
+
 #[derive(Debug, PartialEq)]
 pub enum Iteration {
     Inside {
@@ -10,8 +14,4 @@ pub enum Iteration {
         iterations: u32,
         max_iterations: u32,
     },
-}
-
-pub trait EscapeTime {
-    fn iterate(&self, c: &Complex<f64>) -> Iteration;
 }

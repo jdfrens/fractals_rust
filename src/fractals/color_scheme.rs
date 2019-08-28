@@ -2,6 +2,10 @@ use ::image::Rgb;
 
 use super::escape_time::Iteration;
 
+pub trait ColorScheme: std::fmt::Debug {
+    fn color(&self, iter: Iteration) -> Color;
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Random {}
 
@@ -25,8 +29,4 @@ impl Color {
             (blue * 255.0) as u8,
         ])
     }
-}
-
-pub trait ColorScheme: std::fmt::Debug {
-    fn color(&self, iter: Iteration) -> Color;
 }
