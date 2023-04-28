@@ -2,7 +2,7 @@
 
 Generates escape-time fractals in Rust.
 
-![Tests](https://github.com/github/docs/actions/workflows/main.yml/badge.svg?branch=master)
+![Tests](https://github.com/github/docs/actions/workflows/test.yml/badge.svg?branch=master)
 
 
 I'm also [generating fractals in Elixir](https://github.com/jdfrens/fractals_elixir).
