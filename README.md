@@ -2,7 +2,8 @@
 
 Generates escape-time fractals in Rust.
 
-[![CircleCI](https://circleci.com/gh/jdfrens/fractals_rust/tree/master.svg?style=svg)](https://circleci.com/gh/jdfrens/fractals_rust/tree/master)
+![Tests](https://github.com/github/docs/actions/workflows/main.yml/badge.svg?branch=master)
+
 
 I'm also [generating fractals in Elixir](https://github.com/jdfrens/fractals_elixir).
 

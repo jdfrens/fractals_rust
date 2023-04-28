@@ -10,8 +10,8 @@ strict = []
 
 [dependencies]
 num-complex = "0.4"
-image = "0.23"
+image = "0.24"
 yaml-rust = "0.4"
 
 [dev-dependencies]
-proptest = "0.9.4"
+proptest = "1.1"
