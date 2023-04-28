@@ -3,7 +3,14 @@ name: Rust
 on: [push]
 
 jobs:
-  tests:
+  unit_tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Run tests
+      run: cargo test
+
+  build_test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
@@ -11,5 +18,3 @@ jobs:
       run: cargo --version
     - name: Build
       run: cargo build --features "strict"
-    - name: Run tests
-      run: cargo test
