@@ -1,4 +1,6 @@
+use lazy_static::lazy_static;
 use num_complex::Complex;
+use regex::Regex;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -13,6 +15,16 @@ use super::mandelbrot::Mandelbrot;
 use super::size::Size;
 use super::warp_pov::{Blue, Green, Red};
 use super::Job;
+
+#[derive(Debug, PartialEq)]
+enum ParsingError {
+    BadComplexNumber(String),
+}
+
+#[derive(Debug, PartialEq)]
+enum LexingError {
+    BadLexComplexNumber,
+}
 
 pub fn parse(input_filename: &String) -> Job {
     let mut file = File::open(input_filename).expect("Unable to open file");
@@ -35,7 +47,7 @@ fn parse_job(input_filename: &String, job_yaml: &Yaml) -> Job {
 fn parse_fractal(_input_filename: &String, fractal_yaml: &Yaml) -> Box<dyn EscapeTime> {
     match fractal_yaml["type"].as_str().unwrap() {
         "Julia" => {
-            let c = parse_complex(&fractal_yaml["c"]);
+            let c = parse_complex(&fractal_yaml["c"]).unwrap();
             return Box::new(Julia { c: c });
         }
         "Mandelbrot" => return Box::new(Mandelbrot {}),
@@ -48,8 +60,8 @@ fn parse_image(input_filename: &String, image_yaml: &Yaml) -> Image {
         input_filename: input_filename.clone(),
         output_filename: build_output_filename(input_filename),
         size: parse_size(&image_yaml["size"]),
-        upper_left: parse_complex(&image_yaml["upperLeft"]),
-        lower_right: parse_complex(&image_yaml["lowerRight"]),
+        upper_left: parse_complex(&image_yaml["upperLeft"]).unwrap(),
+        lower_right: parse_complex(&image_yaml["lowerRight"]).unwrap(),
     }
 }
 
@@ -79,18 +91,61 @@ fn parse_size(size: &Yaml) -> Size {
     }
 }
 
-fn parse_complex(complex_value: &Yaml) -> Complex<f64> {
-    let complex_vec: Vec<f64> = complex_value
-        .as_str()
-        .unwrap()
-        .replace("i", "")
-        .split('+')
-        .map(|x| x.parse::<f64>().unwrap())
-        .collect();
-
-    Complex::new(complex_vec[0], complex_vec[1])
+fn parse_complex(complex_value: &Yaml) -> Result<Complex<f64>, ParsingError> {
+    let input = complex_value.as_str().unwrap().to_string();
+    if let Ok((real, rest)) = lex_number_from_complex(input) {
+        if let Ok((sign, rest)) = lex_operator_from_complex(rest) {
+            if let Ok((imag, rest)) = lex_number_from_complex(rest) {
+                if let Ok(rest) = lex_i_from_complex(rest) {
+                    if rest.as_str() == "" {
+                        return Ok(Complex::new(real, sign * imag));
+                    }
+                }
+            }
+        }
+    }
+    Err(ParsingError::BadComplexNumber(
+        complex_value.as_str().unwrap().to_string(),
+    ))
 }
 
+fn lex_number_from_complex(input: String) -> Result<(f64, String), LexingError> {
+    lazy_static! {
+        static ref RE: Regex = Regex::new(r"^\s*((\+|\-)?(\d|\.)+)(.*)$").unwrap();
+    }
+    for cap in RE.captures_iter(input.as_str()) {
+        if let Ok(number) = cap[1].parse::<f64>() {
+            return Ok((number, cap[4].to_string()));
+        } else {
+            return Err(LexingError::BadLexComplexNumber);
+        }
+    }
+    Err(LexingError::BadLexComplexNumber)
+}
+
+fn lex_operator_from_complex(input: String) -> Result<(f64, String), LexingError> {
+    lazy_static! {
+        static ref RE: Regex = Regex::new(r"^\s*(\+|\-)(.*)$").unwrap();
+    }
+    for cap in RE.captures_iter(input.as_str()) {
+        match &cap[1] {
+            "+" => return Ok((1.0, cap[2].to_string())),
+            "-" => return Ok((-1.0, cap[2].to_string())),
+            _ => return Err(LexingError::BadLexComplexNumber),
+        }
+    }
+    Err(LexingError::BadLexComplexNumber)
+}
+
+fn lex_i_from_complex(input: String) -> Result<String, LexingError> {
+    lazy_static! {
+        static ref RE: Regex = Regex::new(r"^\s*i\s*(.*)$").unwrap();
+    }
+    for cap in RE.captures_iter(input.as_str()) {
+        return Ok(cap[1].to_string());
+    }
+    Err(LexingError::BadLexComplexNumber)
+}
 fn parse_color_scheme(color_scheme_yaml: &Yaml) -> Box<dyn ColorScheme> {
     match color_scheme_yaml["type"].as_str().unwrap() {
         "BlackOnWhite" => return Box::new(BlackOnWhite {}),
@@ -111,15 +166,126 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_complex() {
-        let parse = |s: &str| -> Complex<f64> { parse_complex(&Yaml::String(s.to_string())) };
+    fn test_lex_number_from_complex() {
+        assert_eq!(
+            Ok((321.0, "".to_string())),
+            lex_number_from_complex("321".to_string())
+        );
+        assert_eq!(
+            Ok((321.0, " ".to_string())),
+            lex_number_from_complex("   321 ".to_string())
+        );
+        assert_eq!(
+            Ok((321.0, " ".to_string())),
+            lex_number_from_complex("+321 ".to_string())
+        );
+        assert_eq!(
+            Ok((-321.0, " ".to_string())),
+            lex_number_from_complex("-321 ".to_string())
+        );
+        assert_eq!(
+            Ok((321.0, "+2i".to_string())),
+            lex_number_from_complex("321+2i".to_string())
+        );
+        assert_eq!(
+            Ok((3.14, " + 2.0i".to_string())),
+            lex_number_from_complex("  3.14 + 2.0i".to_string())
+        );
+    }
 
-        assert_eq!(Complex::new(5.2, 3.8), parse("5.2+3.8i"));
-        assert_eq!(Complex::new(111.5, 876.222), parse("111.5+876.222i"));
-        assert_eq!(Complex::new(1.0, 2.0), parse("1+2i"));
-        assert_eq!(Complex::new(-5.2, 3.8), parse("-5.2+3.8i"));
-        assert_eq!(Complex::new(5.2, -3.8), parse("5.2+-3.8i"));
-        assert_eq!(Complex::new(-5.2, -3.8), parse("-5.2+-3.8i"));
+    #[test]
+    fn test_lex_number_from_complex_errors() {
+        assert_eq!(
+            Err(LexingError::BadLexComplexNumber),
+            lex_number_from_complex("abc3".to_string())
+        );
+        assert_eq!(
+            Err(LexingError::BadLexComplexNumber),
+            lex_number_from_complex("3.14.159+2i".to_string())
+        );
+    }
+
+    #[test]
+    fn test_lex_operator_from_complex() {
+        assert_eq!(
+            Ok((1.0, "".to_string())),
+            lex_operator_from_complex("+".to_string())
+        );
+        assert_eq!(
+            Ok((-1.0, "".to_string())),
+            lex_operator_from_complex("-".to_string())
+        );
+        assert_eq!(
+            Ok((1.0, " remainder".to_string())),
+            lex_operator_from_complex("   + remainder".to_string())
+        );
+    }
+
+    #[test]
+    fn test_lex_operator_from_complex_errors() {
+        assert_eq!(
+            Err(LexingError::BadLexComplexNumber),
+            lex_operator_from_complex("".to_string())
+        );
+        assert_eq!(
+            Err(LexingError::BadLexComplexNumber),
+            lex_operator_from_complex("anything".to_string())
+        );
+        assert_eq!(
+            Err(LexingError::BadLexComplexNumber),
+            lex_operator_from_complex("*".to_string())
+        );
+        assert_eq!(
+            Err(LexingError::BadLexComplexNumber),
+            lex_operator_from_complex("^".to_string())
+        );
+    }
+
+    #[test]
+    fn test_lex_i_from_complex_errors() {
+        assert_eq!(Ok("".to_string()), lex_i_from_complex("i".to_string()));
+        assert_eq!(
+            Ok("rest".to_string()),
+            lex_i_from_complex("irest".to_string())
+        );
+        assert_eq!(
+            Ok("".to_string()),
+            lex_i_from_complex("   i    ".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_complex() {
+        let parse = |s: &str| -> Result<Complex<f64>, ParsingError> {
+            parse_complex(&Yaml::String(s.to_string()))
+        };
+
+        assert_eq!(Ok(Complex::new(5.2, 3.8)), parse("5.2+3.8i"));
+        assert_eq!(
+            Ok(Complex::new(111.5, 876.222)),
+            parse("   111.5   +   876.222   i    ")
+        );
+        assert_eq!(Ok(Complex::new(1.0, 2.0)), parse("+1+2i"));
+        assert_eq!(Ok(Complex::new(1.0, -2.0)), parse("+1-2i"));
+        assert_eq!(Ok(Complex::new(-1.0, 2.0)), parse("-1+2i"));
+        assert_eq!(Ok(Complex::new(-1.0, -2.0)), parse("-1-2i"));
+        assert_eq!(Ok(Complex::new(1.0, 2.0)), parse("1++2i"));
+        assert_eq!(Ok(Complex::new(1.0, -2.0)), parse("1+-2i"));
+        assert_eq!(Ok(Complex::new(1.0, -2.0)), parse("1-+2i"));
+        assert_eq!(Ok(Complex::new(1.0, 2.0)), parse("1--2i"));
+
+        assert_eq!(
+            Err(ParsingError::BadComplexNumber("ab 1+2i".to_string())),
+            parse("ab 1+2i")
+        );
+        assert_eq!(
+            Err(ParsingError::BadComplexNumber("".to_string())),
+            parse("")
+        );
+        assert_eq!(
+            Err(ParsingError::BadComplexNumber("1+2i  ab".to_string())),
+            parse("1+2i  ab")
+        );
     }
 
     #[test]
