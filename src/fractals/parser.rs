@@ -19,6 +19,7 @@ use super::Job;
 #[derive(Debug, PartialEq)]
 enum ParsingError {
     BadComplexNumber(String),
+    BadInteger(String),
 }
 
 #[derive(Debug, PartialEq)]
@@ -38,22 +39,23 @@ pub fn parse(input_filename: &String) -> Job {
 
 fn parse_job(input_filename: &String, job_yaml: &Yaml) -> Job {
     Job {
-        fractal: parse_fractal(input_filename, &job_yaml["fractal"]),
+        fractal: parse_fractal(&job_yaml["fractal"]),
         image: parse_image(input_filename, &job_yaml["image"]),
         color_scheme: parse_color_scheme(&job_yaml["color_scheme"]),
     }
 }
 
-fn parse_fractal(_input_filename: &String, fractal_yaml: &Yaml) -> Box<dyn EscapeTime> {
+fn parse_fractal(fractal_yaml: &Yaml) -> Box<dyn EscapeTime> {
     match fractal_yaml["type"].as_str().unwrap() {
         "Julia" => {
+            let max_iterations = parse_u64(&fractal_yaml["max_iterations"]).unwrap();
             let c = parse_complex(&fractal_yaml["c"]).unwrap();
-            return Box::new(Julia {
-                max_iterations: 512,
-                c,
-            });
+            return Box::new(Julia { max_iterations, c });
         }
-        "Mandelbrot" => return Box::new(Mandelbrot { max_iterations: 32 }),
+        "Mandelbrot" => {
+            let max_iterations = parse_u64(&fractal_yaml["max_iterations"]).unwrap();
+            return Box::new(Mandelbrot { max_iterations });
+        }
         _ => panic!("{:?} not a valid fractal", fractal_yaml),
     }
 }
@@ -92,6 +94,15 @@ fn parse_size(size: &Yaml) -> Size {
         width: size_vec[0],
         height: size_vec[1],
     }
+}
+
+fn parse_u64(i64_value: &Yaml) -> Result<i64, ParsingError> {
+    if let Some(poop) = i64_value.as_i64() {
+        return Ok(poop);
+    }
+    Err(ParsingError::BadInteger(
+        i64_value.as_str().unwrap().to_string(),
+    ))
 }
 
 fn parse_complex(complex_value: &Yaml) -> Result<Complex<f64>, ParsingError> {
@@ -163,7 +174,7 @@ fn parse_color_scheme(color_scheme_yaml: &Yaml) -> Box<dyn ColorScheme> {
 }
 
 #[cfg(test)]
-mod tests {
+mod parser_tests {
     use super::super::color_scheme::Color;
     use super::super::escape_time::Iteration;
     use super::*;
@@ -292,6 +303,15 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_u64() {
+        let parse = |i| -> Result<i64, ParsingError> { parse_u64(&Yaml::Integer(i)) };
+
+        assert_eq!(Ok(5), parse(5i64));
+        assert_eq!(Ok(50), parse(50i64));
+        assert_eq!(Ok(1234567890), parse(1234567890i64));
+    }
+
+    #[test]
     fn test_parse_size() {
         let parse = |s: &str| -> Size { parse_size(&Yaml::String(s.to_string())) };
 
@@ -380,6 +400,22 @@ mod tests {
                 iterations: 432,
                 max_iterations: 512
             })
+        );
+    }
+
+    #[test]
+    fn test_parse_fractal() {
+        let input = r#"
+        fractal:
+          type: Julia
+          max_iterations: 376
+          c: 1.0+2.0i
+      "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let fractal = parse_fractal(&docs[0]["fractal"]);
+        assert_eq!(
+            format!("{fractal:?}"),
+            "Julia { max_iterations: 376, c: Complex { re: 1.0, im: 2.0 } }"
         );
     }
 }

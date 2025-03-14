@@ -3,7 +3,7 @@ use num_complex::Complex;
 
 #[derive(Debug)]
 pub struct Mandelbrot {
-    pub max_iterations: u32,
+    pub max_iterations: i64,
 }
 
 impl EscapeTime for Mandelbrot {

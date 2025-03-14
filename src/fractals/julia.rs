@@ -3,7 +3,7 @@ use num_complex::Complex;
 
 #[derive(Debug)]
 pub struct Julia {
-    pub max_iterations: u32,
+    pub max_iterations: i64,
     pub c: Complex<f64>,
 }
 

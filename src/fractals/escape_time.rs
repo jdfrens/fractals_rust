@@ -7,11 +7,11 @@ pub trait EscapeTime: std::fmt::Debug {
 #[derive(Debug, PartialEq)]
 pub enum Iteration {
     Inside {
-        iterations: u32,
-        max_iterations: u32,
+        iterations: i64,
+        max_iterations: i64,
     },
     Outside {
-        iterations: u32,
-        max_iterations: u32,
+        iterations: i64,
+        max_iterations: i64,
     },
 }

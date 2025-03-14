@@ -43,7 +43,7 @@ fn intensities(iter: Iteration) -> (f32, f32) {
     }
 }
 
-fn outside_intensity(iterations: u32, max_iterations: u32) -> (f32, f32) {
+fn outside_intensity(iterations: i64, max_iterations: i64) -> (f32, f32) {
     let half_iterations = max_iterations / 2 - 1;
     if iterations <= half_iterations {
         (scale(1.max(iterations), max_iterations), 0.0)
@@ -52,7 +52,7 @@ fn outside_intensity(iterations: u32, max_iterations: u32) -> (f32, f32) {
     }
 }
 
-fn scale(i: u32, max_iterations: u32) -> f32 {
+fn scale(i: i64, max_iterations: i64) -> f32 {
     2.0 * (i - 1) as f32 / max_iterations as f32
 }
 

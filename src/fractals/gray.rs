@@ -37,7 +37,7 @@ impl ColorScheme for WhiteOnBlack {
     }
 }
 
-fn gray_scale(iterations: u32) -> Color {
+fn gray_scale(iterations: i64) -> Color {
     let intensity = (iterations as f32 / 512.0).sqrt();
     Color::new(intensity, intensity, intensity)
 }
@@ -46,14 +46,14 @@ fn gray_scale(iterations: u32) -> Color {
 mod tests {
     use super::*;
 
-    fn inside(iterations: u32) -> Iteration {
+    fn inside(iterations: i64) -> Iteration {
         Iteration::Inside {
             iterations: iterations,
             max_iterations: 512,
         }
     }
 
-    fn outside(iterations: u32) -> Iteration {
+    fn outside(iterations: i64) -> Iteration {
         Iteration::Outside {
             iterations: iterations,
             max_iterations: 512,
@@ -67,14 +67,14 @@ mod tests {
 
         proptest! {
           #[test]
-          fn inside_always_black(iterations in 0u32..1024)  {
+          fn inside_always_black(iterations in 0i64..1024)  {
             let cs = BlackOnWhite {};
             let color = cs.color(outside(iterations));
             prop_assert_eq!(Color::new(1.0, 1.0, 1.0), color);
           }
 
           #[test]
-          fn outside_always_white(iterations in 0u32..1024)  {
+          fn outside_always_white(iterations in 0i64..1024)  {
             let cs = BlackOnWhite {};
             let color = cs.color(inside(iterations));
                 prop_assert_eq!(Color::new(0.0, 0.0, 0.0), color);
@@ -89,7 +89,7 @@ mod tests {
 
         proptest! {
             #[test]
-            fn inside_always_black(iterations in 0u32..1024)  {
+            fn inside_always_black(iterations in 0i64..1024)  {
                 let cs = Gray {};
                 let color = cs.color(inside(iterations));
                 prop_assert_eq!(Color::new(0.0, 0.0, 0.0), color);
@@ -115,14 +115,14 @@ mod tests {
 
         proptest! {
             #[test]
-            fn inside_always_white(iterations in 0u32..1024)  {
+            fn inside_always_white(iterations in 0i64..1024)  {
                 let cs = WhiteOnBlack {};
                 let color = cs.color(inside(iterations));
                 prop_assert_eq!(Color::new(1.0, 1.0, 1.0), color);
             }
 
             #[test]
-            fn outside_always_black(iterations in 0u32..1024)  {
+            fn outside_always_black(iterations in 0i64..1024)  {
                 let cs = WhiteOnBlack {};
                 let color = cs.color(outside(iterations));
                 prop_assert_eq!(Color::new(0.0, 0.0, 0.0), color);
