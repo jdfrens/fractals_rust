@@ -48,9 +48,12 @@ fn parse_fractal(_input_filename: &String, fractal_yaml: &Yaml) -> Box<dyn Escap
     match fractal_yaml["type"].as_str().unwrap() {
         "Julia" => {
             let c = parse_complex(&fractal_yaml["c"]).unwrap();
-            return Box::new(Julia { c: c });
+            return Box::new(Julia {
+                max_iterations: 512,
+                c,
+            });
         }
-        "Mandelbrot" => return Box::new(Mandelbrot {}),
+        "Mandelbrot" => return Box::new(Mandelbrot { max_iterations: 32 }),
         _ => panic!("{:?} not a valid fractal", fractal_yaml),
     }
 }

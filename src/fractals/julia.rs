@@ -3,29 +3,29 @@ use num_complex::Complex;
 
 #[derive(Debug)]
 pub struct Julia {
+    pub max_iterations: u32,
     pub c: Complex<f64>,
 }
 
 impl EscapeTime for Julia {
     fn iterate(&self, z0: &Complex<f64>) -> Iteration {
-        let max_iterations = 512;
+        let Julia { max_iterations, c } = self;
         let mut z = z0.clone();
         let mut iterations = 0;
-        let Julia { c } = self;
 
-        while z.norm_sqr() < 4.0 && iterations < max_iterations {
+        while z.norm_sqr() < 4.0 && iterations < *max_iterations {
             z = z * z + c;
             iterations = iterations + 1;
         }
-        if iterations >= 512 {
+        if iterations >= *max_iterations {
             Iteration::Inside {
                 iterations,
-                max_iterations,
+                max_iterations: *max_iterations,
             }
         } else {
             Iteration::Outside {
                 iterations,
-                max_iterations,
+                max_iterations: *max_iterations,
             }
         }
     }
@@ -38,20 +38,21 @@ mod tests {
     #[test]
     fn test_iterate_inside() {
         let m = Julia {
+            max_iterations: 512,
             c: Complex::new(0.0, 0.0),
         };
 
         assert_eq!(
             Iteration::Inside {
                 iterations: 512,
-                max_iterations: 512
+                max_iterations: 512,
             },
             m.iterate(&Complex::new(0.0, 0.0))
         );
         assert_eq!(
             Iteration::Inside {
                 iterations: 512,
-                max_iterations: 512
+                max_iterations: 512,
             },
             m.iterate(&Complex::new(0.2, 0.5))
         );
@@ -60,6 +61,7 @@ mod tests {
     #[test]
     fn test_iterate_outside() {
         let m = Julia {
+            max_iterations: 512,
             c: Complex::new(0.0, 0.0),
         };
 
