@@ -11,6 +11,8 @@ strict = []
 [dependencies]
 num-complex = "0.4"
 image = "0.24"
+lazy_static = "1.4"
+regex = "1.2"
 yaml-rust = "0.4"
 
 [dev-dependencies]
