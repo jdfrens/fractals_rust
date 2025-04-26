@@ -17,17 +17,18 @@ use super::warp_pov::{Blue, Green, Red};
 use super::Job;
 
 #[derive(Debug, PartialEq)]
-enum ParsingError {
+pub enum ParsingError {
     BadComplexNumber(String),
     BadInteger(String),
+    BadFractal(String),
 }
 
 #[derive(Debug, PartialEq)]
-enum LexingError {
+pub enum LexingError {
     BadLexComplexNumber,
 }
 
-pub fn parse(input_filename: &String) -> Job {
+pub fn parse(input_filename: &String) -> Result<Job, ParsingError> {
     let mut file = File::open(input_filename).expect("Unable to open file");
     let mut contents = String::new();
 
@@ -37,26 +38,42 @@ pub fn parse(input_filename: &String) -> Job {
     parse_job(input_filename, &docs[0])
 }
 
-fn parse_job(input_filename: &String, job_yaml: &Yaml) -> Job {
-    Job {
-        fractal: parse_fractal(&job_yaml["fractal"]),
-        image: parse_image(input_filename, &job_yaml["image"]),
-        color_scheme: parse_color_scheme(&job_yaml["color_scheme"]),
+fn parse_job(input_filename: &String, job_yaml: &Yaml) -> Result<Job, ParsingError> {
+    match parse_fractal(&job_yaml["fractal"]) {
+        Ok(fractal) => Ok(Job {
+            fractal,
+            image: parse_image(input_filename, &job_yaml["image"]),
+            color_scheme: parse_color_scheme(&job_yaml["color_scheme"]),
+        }),
+        Err(e) => Err(e),
     }
 }
 
-fn parse_fractal(fractal_yaml: &Yaml) -> Box<dyn EscapeTime> {
+fn parse_fractal(fractal_yaml: &Yaml) -> Result<Box<dyn EscapeTime>, ParsingError> {
     match fractal_yaml["type"].as_str().unwrap() {
         "Julia" => {
-            let max_iterations = parse_u64(&fractal_yaml["max_iterations"]).unwrap();
+            let max_iterations_result = match fractal_yaml["max_iterations"] {
+                Yaml::Integer(i) => Ok(i),
+                Yaml::BadValue => Ok(128),
+                _ => Err(ParsingError::BadInteger(format!(
+                    "{:?}",
+                    fractal_yaml["max_iterations"]
+                ))),
+            };
             let c = parse_complex(&fractal_yaml["c"]).unwrap();
-            return Box::new(Julia { max_iterations, c });
+            match max_iterations_result {
+                Ok(max_iterations) => Ok(Box::new(Julia { max_iterations, c })),
+                Err(e) => Err(e),
+            }
         }
         "Mandelbrot" => {
             let max_iterations = parse_u64(&fractal_yaml["max_iterations"]).unwrap();
-            return Box::new(Mandelbrot { max_iterations });
+            return Ok(Box::new(Mandelbrot { max_iterations }));
         }
-        _ => panic!("{:?} not a valid fractal", fractal_yaml),
+        _ => Err(ParsingError::BadFractal(format!(
+            "{:?} is not a valid fractal",
+            fractal_yaml
+        ))),
     }
 }
 
@@ -97,8 +114,10 @@ fn parse_size(size: &Yaml) -> Size {
 }
 
 fn parse_u64(i64_value: &Yaml) -> Result<i64, ParsingError> {
-    if let Some(poop) = i64_value.as_i64() {
-        return Ok(poop);
+    println!("{:?}", i64_value);
+
+    if let Some(i) = i64_value.as_i64() {
+        return Ok(i);
     }
     Err(ParsingError::BadInteger(
         i64_value.as_str().unwrap().to_string(),
@@ -309,6 +328,10 @@ mod parser_tests {
         assert_eq!(Ok(5), parse(5i64));
         assert_eq!(Ok(50), parse(50i64));
         assert_eq!(Ok(1234567890), parse(1234567890i64));
+        assert_eq!(
+            Err(ParsingError::BadInteger("Foo".to_string())),
+            parse_u64(&Yaml::String("Foo".to_string()))
+        );
     }
 
     #[test]
@@ -414,8 +437,21 @@ mod parser_tests {
         let docs = YamlLoader::load_from_str(input).unwrap();
         let fractal = parse_fractal(&docs[0]["fractal"]);
         assert_eq!(
-            format!("{fractal:?}"),
-            "Julia { max_iterations: 376, c: Complex { re: 1.0, im: 2.0 } }"
+            format!("{:?}", fractal),
+            "Ok(Julia { max_iterations: 376, c: Complex { re: 1.0, im: 2.0 } })"
+        );
+
+        // test default max_iterations
+        let input = r#"
+        fractal:
+          type: Julia
+          c: 1.0+2.0i
+      "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let fractal = parse_fractal(&docs[0]["fractal"]);
+        assert_eq!(
+            format!("{:?}", fractal),
+            "Ok(Julia { max_iterations: 128, c: Complex { re: 1.0, im: 2.0 } })"
         );
     }
 }
