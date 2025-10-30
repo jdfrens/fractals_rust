@@ -68,7 +68,7 @@ fn parse_fractal(fractal_yaml: &Yaml) -> Result<Box<dyn EscapeTime>, ParsingErro
         }
         "Mandelbrot" => {
             let max_iterations = parse_u64(&fractal_yaml["max_iterations"]).unwrap();
-            return Ok(Box::new(Mandelbrot { max_iterations }));
+            Ok(Box::new(Mandelbrot { max_iterations }))
         }
         _ => Err(ParsingError::BadFractal(format!(
             "{:?} is not a valid fractal",
@@ -117,11 +117,12 @@ fn parse_u64(i64_value: &Yaml) -> Result<i64, ParsingError> {
     println!("{:?}", i64_value);
 
     if let Some(i) = i64_value.as_i64() {
-        return Ok(i);
+        Ok(i)
+    } else {
+        Err(ParsingError::BadInteger(
+            i64_value.as_str().unwrap().to_string(),
+        ))
     }
-    Err(ParsingError::BadInteger(
-        i64_value.as_str().unwrap().to_string(),
-    ))
 }
 
 fn parse_complex(complex_value: &Yaml) -> Result<Complex<f64>, ParsingError> {
@@ -147,11 +148,11 @@ fn lex_number_from_complex(input: String) -> Result<(f64, String), LexingError> 
         static ref RE: Regex = Regex::new(r"^\s*((\+|\-)?(\d|\.)+)(.*)$").unwrap();
     }
     for cap in RE.captures_iter(input.as_str()) {
-        if let Ok(number) = cap[1].parse::<f64>() {
-            return Ok((number, cap[4].to_string()));
+        return if let Ok(number) = cap[1].parse::<f64>() {
+            Ok((number, cap[4].to_string()))
         } else {
-            return Err(LexingError::BadLexComplexNumber);
-        }
+            Err(LexingError::BadLexComplexNumber)
+        };
     }
     Err(LexingError::BadLexComplexNumber)
 }
@@ -161,11 +162,11 @@ fn lex_operator_from_complex(input: String) -> Result<(f64, String), LexingError
         static ref RE: Regex = Regex::new(r"^\s*(\+|\-)(.*)$").unwrap();
     }
     for cap in RE.captures_iter(input.as_str()) {
-        match &cap[1] {
-            "+" => return Ok((1.0, cap[2].to_string())),
-            "-" => return Ok((-1.0, cap[2].to_string())),
-            _ => return Err(LexingError::BadLexComplexNumber),
-        }
+        return match &cap[1] {
+            "+" => Ok((1.0, cap[2].to_string())),
+            "-" => Ok((-1.0, cap[2].to_string())),
+            _ => Err(LexingError::BadLexComplexNumber),
+        };
     }
     Err(LexingError::BadLexComplexNumber)
 }
@@ -181,13 +182,13 @@ fn lex_i_from_complex(input: String) -> Result<String, LexingError> {
 }
 fn parse_color_scheme(color_scheme_yaml: &Yaml) -> Box<dyn ColorScheme> {
     match color_scheme_yaml["type"].as_str().unwrap() {
-        "BlackOnWhite" => return Box::new(BlackOnWhite {}),
-        "Blue" => return Box::new(Blue {}),
-        "Gray" => return Box::new(Gray {}),
-        "Green" => return Box::new(Green {}),
+        "BlackOnWhite" => Box::new(BlackOnWhite {}),
+        "Blue" => Box::new(Blue {}),
+        "Gray" => Box::new(Gray {}),
+        "Green" => Box::new(Green {}),
         // "Random" => Ok(Random {}),
-        "Red" => return Box::new(Red {}),
-        "WhiteOnBlack" => return Box::new(WhiteOnBlack {}),
+        "Red" => Box::new(Red {}),
+        "WhiteOnBlack" => Box::new(WhiteOnBlack {}),
         _ => panic!("{:?} not a valid color scheme", color_scheme_yaml),
     }
 }
