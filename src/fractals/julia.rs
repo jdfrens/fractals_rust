@@ -10,7 +10,7 @@ pub struct Julia {
 impl EscapeTime for Julia {
     fn iterate(&self, z0: &Complex<f64>) -> Iteration {
         let Julia { max_iterations, c } = self;
-        let mut z = z0.clone();
+        let mut z = *z0;
         let mut iterations = 0;
 
         while z.norm_sqr() < 4.0 && iterations < *max_iterations {
