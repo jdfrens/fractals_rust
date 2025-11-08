@@ -1,6 +1,9 @@
 use super::escape_time::{EscapeTime, Iteration};
 use num_complex::Complex;
 
+#[cfg(test)]
+use std::any::Any;
+
 #[derive(Debug)]
 pub struct Julia {
     pub max_iterations: i64,
@@ -28,6 +31,11 @@ impl EscapeTime for Julia {
                 max_iterations: *max_iterations,
             }
         }
+    }
+
+    #[cfg(test)]
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 

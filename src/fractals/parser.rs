@@ -484,11 +484,12 @@ mod parser_tests {
           c: 1.0+2.0i
       "#;
         let docs = YamlLoader::load_from_str(input).unwrap();
-        let fractal = parse_fractal(&docs[0]["fractal"]);
-        assert_eq!(
-            format!("{:?}", fractal),
-            "Ok(Julia { max_iterations: 376, c: Complex { re: 1.0, im: 2.0 } })"
-        );
+        let fractal = parse_fractal(&docs[0]["fractal"]).unwrap();
+        
+        // Downcast to Julia to verify the values
+        let julia = fractal.as_any().downcast_ref::<Julia>().unwrap();
+        assert_eq!(julia.max_iterations, 376);
+        assert_eq!(julia.c, Complex::new(1.0, 2.0));
 
         // test default max_iterations
         let input = r#"
@@ -497,10 +498,10 @@ mod parser_tests {
           c: 1.0+2.0i
       "#;
         let docs = YamlLoader::load_from_str(input).unwrap();
-        let fractal = parse_fractal(&docs[0]["fractal"]);
-        assert_eq!(
-            format!("{:?}", fractal),
-            "Ok(Julia { max_iterations: 128, c: Complex { re: 1.0, im: 2.0 } })"
-        );
+        let fractal = parse_fractal(&docs[0]["fractal"]).unwrap();
+        
+        let julia = fractal.as_any().downcast_ref::<Julia>().unwrap();
+        assert_eq!(julia.max_iterations, 128);
+        assert_eq!(julia.c, Complex::new(1.0, 2.0));
     }
 }
