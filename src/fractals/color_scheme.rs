@@ -7,9 +7,6 @@ pub trait ColorScheme: std::fmt::Debug {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Random {}
-
-#[derive(Debug, PartialEq)]
 pub struct Color {
     red: f32,
     green: f32,
