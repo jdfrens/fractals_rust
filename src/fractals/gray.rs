@@ -67,14 +67,14 @@ mod tests {
 
         proptest! {
           #[test]
-          fn inside_always_black(iterations in 0i64..1024)  {
+          fn outside_always_white(iterations in 0i64..1024)  {
             let cs = BlackOnWhite {};
             let color = cs.color(outside(iterations));
             prop_assert_eq!(Color::new(1.0, 1.0, 1.0), color);
           }
 
           #[test]
-          fn outside_always_white(iterations in 0i64..1024)  {
+          fn inside_always_black(iterations in 0i64..1024)  {
             let cs = BlackOnWhite {};
             let color = cs.color(inside(iterations));
                 prop_assert_eq!(Color::new(0.0, 0.0, 0.0), color);
