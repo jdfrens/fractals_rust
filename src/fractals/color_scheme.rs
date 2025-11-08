@@ -6,7 +6,7 @@ pub trait ColorScheme: std::fmt::Debug {
     fn color(&self, iter: Iteration) -> Color;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Color {
     red: f32,
     green: f32,

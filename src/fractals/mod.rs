@@ -6,6 +6,7 @@ pub mod job;
 mod julia;
 mod mandelbrot;
 pub mod parser;
+mod random;
 pub mod size;
 mod warp_pov;
 
