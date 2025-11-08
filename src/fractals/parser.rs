@@ -84,7 +84,14 @@ fn parse_fractal(fractal_yaml: &Yaml) -> Result<Box<dyn EscapeTime>, ParsingErro
             }
         }
         "Mandelbrot" => {
-            let max_iterations = parse_u64(&fractal_yaml["max_iterations"])?;
+            let max_iterations = match fractal_yaml["max_iterations"] {
+                Yaml::Integer(i) => Ok(i),
+                Yaml::BadValue => Ok(128),
+                _ => Err(ParsingError::BadInteger(format!(
+                    "{:?}",
+                    fractal_yaml["max_iterations"]
+                ))),
+            }?;
             Ok(Box::new(Mandelbrot { max_iterations }))
         }
         _ => Err(ParsingError::BadFractal(format!(
@@ -146,6 +153,7 @@ fn parse_size(size: &Yaml) -> Result<Size, ParsingError> {
     })
 }
 
+#[cfg(test)]
 fn parse_u64(i64_value: &Yaml) -> Result<i64, ParsingError> {
     if let Some(i) = i64_value.as_i64() {
         Ok(i)
@@ -560,14 +568,30 @@ mod parser_tests {
     }
 
     #[test]
-    fn test_parse_fractal_mandelbrot_missing_max_iterations() {
+    fn test_parse_fractal_mandelbrot_default_max_iterations() {
         let input = r#"
         fractal:
           type: Mandelbrot
       "#;
         let docs = YamlLoader::load_from_str(input).unwrap();
-        let result = parse_fractal(&docs[0]["fractal"]);
-        assert!(matches!(result, Err(ParsingError::BadInteger(_))));
+        let fractal = parse_fractal(&docs[0]["fractal"]).unwrap();
+        
+        let mandelbrot = fractal.as_any().downcast_ref::<Mandelbrot>().unwrap();
+        assert_eq!(mandelbrot.max_iterations, 128);
+    }
+
+    #[test]
+    fn test_parse_fractal_mandelbrot_with_max_iterations() {
+        let input = r#"
+        fractal:
+          type: Mandelbrot
+          max_iterations: 512
+      "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let fractal = parse_fractal(&docs[0]["fractal"]).unwrap();
+        
+        let mandelbrot = fractal.as_any().downcast_ref::<Mandelbrot>().unwrap();
+        assert_eq!(mandelbrot.max_iterations, 512);
     }
 
     #[test]
