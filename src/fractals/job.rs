@@ -2,6 +2,7 @@ use super::color_scheme::ColorScheme;
 use super::escape_time::EscapeTime;
 use super::image::Image;
 use super::parser;
+use super::parser::ParsingError;
 
 #[derive(Debug)]
 pub struct Job {
@@ -11,7 +12,7 @@ pub struct Job {
 }
 
 impl Job {
-    pub fn parse(filename: &String) -> Self {
+    pub fn parse(filename: &String) -> Result<Self, ParsingError> {
         parser::parse(filename)
     }
 

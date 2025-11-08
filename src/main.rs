@@ -7,7 +7,18 @@ mod fractals;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
+    
+    if args.len() < 2 {
+        eprintln!("Usage: {} <input_filename>", args[0]);
+        std::process::exit(1);
+    }
+    
     let input_filename = &args[1];
-    let job = Job::parse(input_filename);
-    job.generate();
+    match Job::parse(input_filename) {
+        Ok(job) => job.generate(),
+        Err(e) => {
+            eprintln!("Error parsing input file: {:?}", e);
+            std::process::exit(1);
+        }
+    }
 }

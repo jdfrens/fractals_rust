@@ -57,6 +57,7 @@ impl Image {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use assert_eq_float::*;
 
     fn image() -> Image {
         Image {
@@ -73,43 +74,42 @@ mod tests {
 
     #[test]
     fn test_view_width() {
-        assert_eq!(3.2, image().view_width());
+        assert_eq_float!(3.2, image().view_width());
     }
 
     #[test]
     fn test_view_height() {
-        assert_eq!(2.4, image().view_height());
+        assert_eq_float!(2.4, image().view_height());
     }
 
     #[test]
     fn test_left() {
-        assert_eq!(-2.0, image().left());
+        assert_eq_float!(-2.0, image().left());
     }
 
     #[test]
     fn test_top() {
-        assert_eq!(1.2, image().top());
+        assert_eq_float!(1.2, image().top());
     }
 
     #[test]
     fn test_x_delta() {
-        assert_eq!(0.0062622309197651665, image().x_delta());
+        assert_eq_float!(0.0062622309197651665, image().x_delta());
     }
 
     #[test]
     fn test_y_delta() {
-        assert_eq!(0.006266318537859007, image().y_delta());
+        assert_eq_float!(0.006266318537859007, image().y_delta());
     }
 
     #[test]
     fn test_complex_at() {
-        assert_eq!(
-            Complex::new(-1.9686888454011742, 0.39791122715404703),
-            image().complex_at(5, 128)
-        );
-        assert_eq!(
-            Complex::new(-0.12133072407044998, 1.0809399477806787),
-            image().complex_at(300, 19)
-        );
+        let result1 = image().complex_at(5, 128);
+        assert_eq_float!(-1.9686888454011742, result1.re);
+        assert_eq_float!(0.39791122715404703, result1.im);
+
+        let result2 = image().complex_at(300, 19);
+        assert_eq_float!(-0.12133072407044998, result2.re);
+        assert_eq_float!(1.0809399477806787, result2.im);
     }
 }

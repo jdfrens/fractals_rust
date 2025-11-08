@@ -13,7 +13,8 @@ num-complex = "0.4"
 image = "0.24"
 lazy_static = "1.4"
 regex = "1.2"
-yaml-rust = "0.4"
+yaml-rust = { version = "0.9", package = "yaml-rust2" }
 
 [dev-dependencies]
 proptest = "1.1"
+assert-eq-float = "0.1"

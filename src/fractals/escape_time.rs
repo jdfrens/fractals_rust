@@ -1,17 +1,23 @@
 use num_complex::Complex;
 
+#[cfg(test)]
+use std::any::Any;
+
 pub trait EscapeTime: std::fmt::Debug {
     fn iterate(&self, c: &Complex<f64>) -> Iteration;
+    
+    #[cfg(test)]
+    fn as_any(&self) -> &dyn Any;
 }
 
 #[derive(Debug, PartialEq)]
 pub enum Iteration {
     Inside {
-        iterations: u32,
-        max_iterations: u32,
+        iterations: i64,
+        max_iterations: i64,
     },
     Outside {
-        iterations: u32,
-        max_iterations: u32,
+        iterations: i64,
+        max_iterations: i64,
     },
 }

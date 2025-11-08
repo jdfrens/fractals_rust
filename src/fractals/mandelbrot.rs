@@ -1,30 +1,40 @@
 use super::escape_time::{EscapeTime, Iteration};
 use num_complex::Complex;
 
+#[cfg(test)]
+use std::any::Any;
+
 #[derive(Debug)]
-pub struct Mandelbrot;
+pub struct Mandelbrot {
+    pub max_iterations: i64,
+}
 
 impl EscapeTime for Mandelbrot {
     fn iterate(&self, c: &Complex<f64>) -> Iteration {
-        let max_iterations = 512;
+        let Mandelbrot { max_iterations } = self;
         let mut z = Complex::new(0.0, 0.0);
         let mut iterations = 0;
 
-        while z.norm_sqr() < 4.0 && iterations < max_iterations {
+        while z.norm_sqr() < 4.0 && iterations < *max_iterations {
             z = z * z + c;
             iterations = iterations + 1;
         }
-        if iterations >= 512 {
+        if iterations >= *max_iterations {
             Iteration::Inside {
                 iterations,
-                max_iterations,
+                max_iterations: *max_iterations,
             }
         } else {
             Iteration::Outside {
                 iterations,
-                max_iterations,
+                max_iterations: *max_iterations,
             }
         }
+    }
+
+    #[cfg(test)]
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 
@@ -34,7 +44,9 @@ mod tests {
 
     #[test]
     fn test_iterate_inside() {
-        let m = Mandelbrot {};
+        let m = Mandelbrot {
+            max_iterations: 512,
+        };
 
         assert_eq!(
             Iteration::Inside {
@@ -54,7 +66,9 @@ mod tests {
 
     #[test]
     fn test_iterate_outside() {
-        let m = Mandelbrot {};
+        let m = Mandelbrot {
+            max_iterations: 512,
+        };
 
         assert_eq!(
             Iteration::Outside {
