@@ -1,3 +1,11 @@
+mod gray;
+mod random;
+mod warp_pov;
+
+pub use gray::{BlackOnWhite, Gray, WhiteOnBlack};
+pub use random::Random;
+pub use warp_pov::{Blue, Green, Red};
+
 use ::image::Rgb;
 
 use super::escape_time::Iteration;
@@ -6,7 +14,7 @@ pub trait ColorScheme: std::fmt::Debug {
     fn color(&self, iter: Iteration) -> Color;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Color {
     red: f32,
     green: f32,

@@ -227,6 +227,7 @@ dependencies = [
  "lazy_static",
  "num-complex",
  "proptest",
+ "rand",
  "regex",
  "yaml-rust2",
 ]
