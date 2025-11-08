@@ -21,6 +21,11 @@ pub enum ParsingError {
     BadComplexNumber(String),
     BadInteger(String),
     BadFractal(String),
+    IoError(String),
+    YamlError(String),
+    BadColorScheme(String),
+    BadSize(String),
+    MissingField(String),
 }
 
 #[derive(Debug, PartialEq)]
@@ -29,28 +34,40 @@ pub enum LexingError {
 }
 
 pub fn parse(input_filename: &String) -> Result<Job, ParsingError> {
-    let mut file = File::open(input_filename).expect("Unable to open file");
+    let mut file = File::open(input_filename)
+        .map_err(|e| ParsingError::IoError(format!("Unable to open file: {}", e)))?;
     let mut contents = String::new();
 
     file.read_to_string(&mut contents)
-        .expect("Unable to read file");
-    let docs = YamlLoader::load_from_str(&contents).unwrap();
+        .map_err(|e| ParsingError::IoError(format!("Unable to read file: {}", e)))?;
+    let docs = YamlLoader::load_from_str(&contents)
+        .map_err(|e| ParsingError::YamlError(format!("YAML parsing error: {:?}", e)))?;
+
+    if docs.is_empty() {
+        return Err(ParsingError::YamlError("Empty YAML document".to_string()));
+    }
+
     parse_job(input_filename, &docs[0])
 }
 
 fn parse_job(input_filename: &String, job_yaml: &Yaml) -> Result<Job, ParsingError> {
-    match parse_fractal(&job_yaml["fractal"]) {
-        Ok(fractal) => Ok(Job {
-            fractal,
-            image: parse_image(input_filename, &job_yaml["image"]),
-            color_scheme: parse_color_scheme(&job_yaml["color_scheme"]),
-        }),
-        Err(e) => Err(e),
-    }
+    let fractal = parse_fractal(&job_yaml["fractal"])?;
+    let image = parse_image(input_filename, &job_yaml["image"])?;
+    let color_scheme = parse_color_scheme(&job_yaml["color_scheme"])?;
+
+    Ok(Job {
+        fractal,
+        image,
+        color_scheme,
+    })
 }
 
 fn parse_fractal(fractal_yaml: &Yaml) -> Result<Box<dyn EscapeTime>, ParsingError> {
-    match fractal_yaml["type"].as_str().unwrap() {
+    let fractal_type = fractal_yaml["type"]
+        .as_str()
+        .ok_or_else(|| ParsingError::MissingField("fractal type".to_string()))?;
+
+    match fractal_type {
         "Julia" => {
             let max_iterations_result = match fractal_yaml["max_iterations"] {
                 Yaml::Integer(i) => Ok(i),
@@ -60,14 +77,14 @@ fn parse_fractal(fractal_yaml: &Yaml) -> Result<Box<dyn EscapeTime>, ParsingErro
                     fractal_yaml["max_iterations"]
                 ))),
             };
-            let c = parse_complex(&fractal_yaml["c"]).unwrap();
+            let c = parse_complex(&fractal_yaml["c"])?;
             match max_iterations_result {
                 Ok(max_iterations) => Ok(Box::new(Julia { max_iterations, c })),
                 Err(e) => Err(e),
             }
         }
         "Mandelbrot" => {
-            let max_iterations = parse_u64(&fractal_yaml["max_iterations"]).unwrap();
+            let max_iterations = parse_u64(&fractal_yaml["max_iterations"])?;
             Ok(Box::new(Mandelbrot { max_iterations }))
         }
         _ => Err(ParsingError::BadFractal(format!(
@@ -77,57 +94,77 @@ fn parse_fractal(fractal_yaml: &Yaml) -> Result<Box<dyn EscapeTime>, ParsingErro
     }
 }
 
-fn parse_image(input_filename: &String, image_yaml: &Yaml) -> Image {
-    Image {
+fn parse_image(input_filename: &String, image_yaml: &Yaml) -> Result<Image, ParsingError> {
+    Ok(Image {
         input_filename: input_filename.clone(),
-        output_filename: build_output_filename(input_filename),
-        size: parse_size(&image_yaml["size"]),
-        upper_left: parse_complex(&image_yaml["upperLeft"]).unwrap(),
-        lower_right: parse_complex(&image_yaml["lowerRight"]).unwrap(),
-    }
+        output_filename: build_output_filename(input_filename)?,
+        size: parse_size(&image_yaml["size"])?,
+        upper_left: parse_complex(&image_yaml["upperLeft"])?,
+        lower_right: parse_complex(&image_yaml["lowerRight"])?,
+    })
 }
 
-fn build_output_filename(input_filename: &String) -> String {
-    let file_stem = Path::new(input_filename).file_stem().unwrap();
+fn build_output_filename(input_filename: &String) -> Result<String, ParsingError> {
+    let file_stem = Path::new(input_filename).file_stem().ok_or_else(|| {
+        ParsingError::IoError(format!(
+            "Cannot extract filename stem from {}",
+            input_filename
+        ))
+    })?;
     let mut output_filename = PathBuf::new();
     output_filename.push("images");
     output_filename.push(file_stem);
     output_filename.set_extension("png");
-    output_filename.as_os_str().to_str().unwrap().to_string()
+    let result = output_filename
+        .as_os_str()
+        .to_str()
+        .ok_or_else(|| ParsingError::IoError("Cannot convert path to string".to_string()))?;
+    Ok(result.to_string())
 }
 
-fn parse_size(size: &Yaml) -> Size {
+fn parse_size(size: &Yaml) -> Result<Size, ParsingError> {
     let size_str: &str = match size.as_str() {
         Some(s) => s,
-        None => &"1024x768",
+        None => "1024x768",
     };
 
-    let size_vec: Vec<u32> = size_str
-        .split('x')
-        .map(|x| x.parse::<u32>().unwrap())
-        .collect();
+    let size_vec: Result<Vec<u32>, _> = size_str.split('x').map(|x| x.parse::<u32>()).collect();
 
-    Size {
+    let size_vec =
+        size_vec.map_err(|e| ParsingError::BadSize(format!("Invalid size number: {}", e)))?;
+
+    if size_vec.len() != 2 {
+        return Err(ParsingError::BadSize(format!(
+            "Size must be in format WIDTHxHEIGHT, got: {}",
+            size_str
+        )));
+    }
+
+    Ok(Size {
         width: size_vec[0],
         height: size_vec[1],
-    }
+    })
 }
 
 fn parse_u64(i64_value: &Yaml) -> Result<i64, ParsingError> {
-    println!("{:?}", i64_value);
-
     if let Some(i) = i64_value.as_i64() {
         Ok(i)
     } else {
-        Err(ParsingError::BadInteger(
-            i64_value.as_str().unwrap().to_string(),
-        ))
+        let value_str = i64_value
+            .as_str()
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| format!("{:?}", i64_value));
+        Err(ParsingError::BadInteger(value_str))
     }
 }
 
 fn parse_complex(complex_value: &Yaml) -> Result<Complex<f64>, ParsingError> {
-    let input = complex_value.as_str().unwrap().to_string();
-    if let Ok((real, rest)) = lex_number_from_complex(input) {
+    let input = complex_value
+        .as_str()
+        .ok_or_else(|| ParsingError::BadComplexNumber(format!("{:?}", complex_value)))?
+        .to_string();
+
+    if let Ok((real, rest)) = lex_number_from_complex(input.clone()) {
         if let Ok((sign, rest)) = lex_operator_from_complex(rest) {
             if let Ok((imag, rest)) = lex_number_from_complex(rest) {
                 if let Ok(rest) = lex_i_from_complex(rest) {
@@ -138,58 +175,66 @@ fn parse_complex(complex_value: &Yaml) -> Result<Complex<f64>, ParsingError> {
             }
         }
     }
-    Err(ParsingError::BadComplexNumber(
-        complex_value.as_str().unwrap().to_string(),
-    ))
+    Err(ParsingError::BadComplexNumber(input))
 }
 
 fn lex_number_from_complex(input: String) -> Result<(f64, String), LexingError> {
     lazy_static! {
         static ref RE: Regex = Regex::new(r"^\s*((\+|\-)?(\d|\.)+)(.*)$").unwrap();
     }
-    for cap in RE.captures_iter(input.as_str()) {
-        return if let Ok(number) = cap[1].parse::<f64>() {
+    if let Some(cap) = RE.captures(input.as_str()) {
+        if let Ok(number) = cap[1].parse::<f64>() {
             Ok((number, cap[4].to_string()))
         } else {
             Err(LexingError::BadLexComplexNumber)
-        };
+        }
+    } else {
+        Err(LexingError::BadLexComplexNumber)
     }
-    Err(LexingError::BadLexComplexNumber)
 }
 
 fn lex_operator_from_complex(input: String) -> Result<(f64, String), LexingError> {
     lazy_static! {
         static ref RE: Regex = Regex::new(r"^\s*(\+|\-)(.*)$").unwrap();
     }
-    for cap in RE.captures_iter(input.as_str()) {
-        return match &cap[1] {
+    if let Some(cap) = RE.captures(input.as_str()) {
+        match &cap[1] {
             "+" => Ok((1.0, cap[2].to_string())),
             "-" => Ok((-1.0, cap[2].to_string())),
             _ => Err(LexingError::BadLexComplexNumber),
-        };
+        }
+    } else {
+        Err(LexingError::BadLexComplexNumber)
     }
-    Err(LexingError::BadLexComplexNumber)
 }
 
 fn lex_i_from_complex(input: String) -> Result<String, LexingError> {
     lazy_static! {
         static ref RE: Regex = Regex::new(r"^\s*i\s*(.*)$").unwrap();
     }
-    for cap in RE.captures_iter(input.as_str()) {
-        return Ok(cap[1].to_string());
+    if let Some(cap) = RE.captures(input.as_str()) {
+        Ok(cap[1].to_string())
+    } else {
+        Err(LexingError::BadLexComplexNumber)
     }
-    Err(LexingError::BadLexComplexNumber)
 }
-fn parse_color_scheme(color_scheme_yaml: &Yaml) -> Box<dyn ColorScheme> {
-    match color_scheme_yaml["type"].as_str().unwrap() {
-        "BlackOnWhite" => Box::new(BlackOnWhite {}),
-        "Blue" => Box::new(Blue {}),
-        "Gray" => Box::new(Gray {}),
-        "Green" => Box::new(Green {}),
-        // "Random" => Ok(Random {}),
-        "Red" => Box::new(Red {}),
-        "WhiteOnBlack" => Box::new(WhiteOnBlack {}),
-        _ => panic!("{:?} not a valid color scheme", color_scheme_yaml),
+fn parse_color_scheme(color_scheme_yaml: &Yaml) -> Result<Box<dyn ColorScheme>, ParsingError> {
+    let scheme_type = color_scheme_yaml["type"]
+        .as_str()
+        .ok_or_else(|| ParsingError::MissingField("color_scheme type".to_string()))?;
+
+    match scheme_type {
+        "BlackOnWhite" => Ok(Box::new(BlackOnWhite {})),
+        "Blue" => Ok(Box::new(Blue {})),
+        "Gray" => Ok(Box::new(Gray {})),
+        "Green" => Ok(Box::new(Green {})),
+        // "Random" => Ok(Box::new(Random {})),
+        "Red" => Ok(Box::new(Red {})),
+        "WhiteOnBlack" => Ok(Box::new(WhiteOnBlack {})),
+        _ => Err(ParsingError::BadColorScheme(format!(
+            "{} is not a valid color scheme",
+            scheme_type
+        ))),
     }
 }
 
@@ -337,20 +382,21 @@ mod parser_tests {
 
     #[test]
     fn test_parse_size() {
-        let parse = |s: &str| -> Size { parse_size(&Yaml::String(s.to_string())) };
+        let parse =
+            |s: &str| -> Result<Size, ParsingError> { parse_size(&Yaml::String(s.to_string())) };
 
         assert_eq!(
-            Size {
+            Ok(Size {
                 width: 100,
                 height: 333
-            },
+            }),
             parse("100x333")
         );
         assert_eq!(
-            Size {
+            Ok(Size {
                 width: 9,
                 height: 12_345
-            },
+            }),
             parse("9x12345")
         );
     }
@@ -365,7 +411,7 @@ mod parser_tests {
     "#;
         let docs = YamlLoader::load_from_str(input).unwrap();
         assert_eq!(
-            Image {
+            Ok(Image {
                 input_filename: "data/foobar.yml".to_string(),
                 output_filename: "images/foobar.png".to_string(),
                 size: Size {
@@ -374,7 +420,7 @@ mod parser_tests {
                 },
                 upper_left: Complex::new(-2.0, 1.2),
                 lower_right: Complex::new(1.2, -1.2),
-            },
+            }),
             parse_image(&String::from("data/foobar.yml"), &docs[0]["image"])
         );
     }
@@ -392,7 +438,9 @@ mod parser_tests {
                 width: 1024,
                 height: 768
             },
-            parse_image(&String::from("data/foobar.yml"), &docs[0]["image"]).size
+            parse_image(&String::from("data/foobar.yml"), &docs[0]["image"])
+                .unwrap()
+                .size
         );
     }
 
@@ -403,7 +451,7 @@ mod parser_tests {
           type: BlackOnWhite
       "#;
         let docs = YamlLoader::load_from_str(input).unwrap();
-        let cs = parse_color_scheme(&docs[0]["color_scheme"]);
+        let cs = parse_color_scheme(&docs[0]["color_scheme"]).unwrap();
         assert_eq!(
             Color::new(0.0, 0.0, 0.0),
             cs.color(Iteration::Inside {
@@ -417,7 +465,7 @@ mod parser_tests {
               type: Green
           "#;
         let docs = YamlLoader::load_from_str(input).unwrap();
-        let cs = parse_color_scheme(&docs[0]["color_scheme"]);
+        let cs = parse_color_scheme(&docs[0]["color_scheme"]).unwrap();
         assert_eq!(
             Color::new(0.6875, 1.0, 0.6875),
             cs.color(Iteration::Outside {
