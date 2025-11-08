@@ -14,6 +14,7 @@ image = "0.24"
 lazy_static = "1.4"
 regex = "1.2"
 yaml-rust = { version = "0.9", package = "yaml-rust2" }
+rand = "0.8"
 
 [dev-dependencies]
 proptest = "1.1"
