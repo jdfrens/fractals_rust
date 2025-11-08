@@ -61,7 +61,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn blue_is_primary() {
+    fn test_blue_is_primary() {
         let cs = Blue {};
         assert_eq!(
             Color::new(0.6875, 0.6875, 1.0),
@@ -73,7 +73,7 @@ mod tests {
     }
 
     #[test]
-    fn green_is_primary() {
+    fn test_green_is_primary() {
         let cs = Green {};
         assert_eq!(
             Color::new(0.6875, 1.0, 0.6875),
@@ -85,7 +85,7 @@ mod tests {
     }
 
     #[test]
-    fn red_is_primary() {
+    fn test_red_is_primary() {
         let cs = Red {};
         assert_eq!(
             Color::new(1.0, 0.6875, 0.6875),
