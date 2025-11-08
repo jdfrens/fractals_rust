@@ -504,4 +504,166 @@ mod parser_tests {
         assert_eq!(julia.max_iterations, 128);
         assert_eq!(julia.c, Complex::new(1.0, 2.0));
     }
+
+    // Error handling tests
+
+    #[test]
+    fn test_parse_fractal_missing_type() {
+        let input = r#"
+        fractal:
+          max_iterations: 376
+          c: 1.0+2.0i
+      "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let result = parse_fractal(&docs[0]["fractal"]);
+        assert!(matches!(
+            result,
+            Err(ParsingError::MissingField(ref msg)) if msg == "fractal type"
+        ));
+    }
+
+    #[test]
+    fn test_parse_fractal_invalid_type() {
+        let input = r#"
+        fractal:
+          type: InvalidFractal
+          max_iterations: 376
+      "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let result = parse_fractal(&docs[0]["fractal"]);
+        assert!(matches!(result, Err(ParsingError::BadFractal(_))));
+    }
+
+    #[test]
+    fn test_parse_fractal_julia_missing_c() {
+        let input = r#"
+        fractal:
+          type: Julia
+          max_iterations: 376
+      "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let result = parse_fractal(&docs[0]["fractal"]);
+        assert!(matches!(result, Err(ParsingError::BadComplexNumber(_))));
+    }
+
+    #[test]
+    fn test_parse_fractal_julia_invalid_max_iterations() {
+        let input = r#"
+        fractal:
+          type: Julia
+          max_iterations: "not a number"
+          c: 1.0+2.0i
+      "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let result = parse_fractal(&docs[0]["fractal"]);
+        assert!(matches!(result, Err(ParsingError::BadInteger(_))));
+    }
+
+    #[test]
+    fn test_parse_fractal_mandelbrot_missing_max_iterations() {
+        let input = r#"
+        fractal:
+          type: Mandelbrot
+      "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let result = parse_fractal(&docs[0]["fractal"]);
+        assert!(matches!(result, Err(ParsingError::BadInteger(_))));
+    }
+
+    #[test]
+    fn test_parse_complex_invalid_format() {
+        let result = parse_complex(&Yaml::String("invalid".to_string()));
+        assert_eq!(
+            result,
+            Err(ParsingError::BadComplexNumber("invalid".to_string()))
+        );
+    }
+
+    #[test]
+    fn test_parse_complex_not_a_string() {
+        let result = parse_complex(&Yaml::Integer(42));
+        assert!(matches!(result, Err(ParsingError::BadComplexNumber(_))));
+    }
+
+    #[test]
+    fn test_parse_size_invalid_format() {
+        let result = parse_size(&Yaml::String("100".to_string()));
+        assert!(matches!(result, Err(ParsingError::BadSize(_))));
+    }
+
+    #[test]
+    fn test_parse_size_invalid_numbers() {
+        let result = parse_size(&Yaml::String("100xabc".to_string()));
+        assert!(matches!(result, Err(ParsingError::BadSize(_))));
+    }
+
+    #[test]
+    fn test_parse_size_too_many_dimensions() {
+        let result = parse_size(&Yaml::String("100x200x300".to_string()));
+        assert!(matches!(result, Err(ParsingError::BadSize(_))));
+    }
+
+    #[test]
+    fn test_parse_color_scheme_missing_type() {
+        let input = r#"
+        color_scheme:
+          foo: bar
+      "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let result = parse_color_scheme(&docs[0]["color_scheme"]);
+        assert!(matches!(
+            result,
+            Err(ParsingError::MissingField(ref msg)) if msg == "color_scheme type"
+        ));
+    }
+
+    #[test]
+    fn test_parse_color_scheme_invalid_type() {
+        let input = r#"
+        color_scheme:
+          type: InvalidScheme
+      "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let result = parse_color_scheme(&docs[0]["color_scheme"]);
+        assert!(matches!(result, Err(ParsingError::BadColorScheme(_))));
+    }
+
+    #[test]
+    fn test_parse_image_missing_upper_left() {
+        let input = r#"
+      image:
+        size: 512x384
+        lowerRight: 1.2+-1.2i
+    "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let result = parse_image(&String::from("data/foobar.yml"), &docs[0]["image"]);
+        assert!(matches!(result, Err(ParsingError::BadComplexNumber(_))));
+    }
+
+    #[test]
+    fn test_parse_image_missing_lower_right() {
+        let input = r#"
+      image:
+        size: 512x384
+        upperLeft: -2.0+1.2i
+    "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let result = parse_image(&String::from("data/foobar.yml"), &docs[0]["image"]);
+        assert!(matches!(result, Err(ParsingError::BadComplexNumber(_))));
+    }
+
+    #[test]
+    fn test_parse_u64_string_value() {
+        let result = parse_u64(&Yaml::String("not a number".to_string()));
+        assert_eq!(
+            result,
+            Err(ParsingError::BadInteger("not a number".to_string()))
+        );
+    }
+
+    #[test]
+    fn test_parse_nonexistent_file() {
+        let result = parse(&String::from("/nonexistent/file.yml"));
+        assert!(matches!(result, Err(ParsingError::IoError(_))));
+    }
 }
