@@ -6,14 +6,12 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use yaml_rust::{Yaml, YamlLoader};
 
-use super::color_scheme::ColorScheme;
+use super::color_scheme::{BlackOnWhite, Blue, ColorScheme, Gray, Green, Random, Red, WhiteOnBlack};
 use super::escape_time::EscapeTime;
-use super::gray::{BlackOnWhite, Gray, WhiteOnBlack};
 use super::image::Image;
 use super::julia::Julia;
 use super::mandelbrot::Mandelbrot;
 use super::size::Size;
-use super::warp_pov::{Blue, Green, Red};
 use super::Job;
 
 #[derive(Debug, PartialEq)]
@@ -236,7 +234,7 @@ fn parse_color_scheme(color_scheme_yaml: &Yaml) -> Result<Box<dyn ColorScheme>, 
         "Blue" => Ok(Box::new(Blue {})),
         "Gray" => Ok(Box::new(Gray {})),
         "Green" => Ok(Box::new(Green {})),
-        // "Random" => Ok(Box::new(Random {})),
+        "Random" => Ok(Box::new(Random::new())),
         "Red" => Ok(Box::new(Red {})),
         "WhiteOnBlack" => Ok(Box::new(WhiteOnBlack {})),
         _ => Err(ParsingError::BadColorScheme(format!(
@@ -481,6 +479,37 @@ mod parser_tests {
                 max_iterations: 512
             })
         );
+    }
+
+    #[test]
+    fn test_parse_color_scheme_random() {
+        let input = r#"
+        color_scheme:
+          type: Random
+      "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let cs = parse_color_scheme(&docs[0]["color_scheme"]).unwrap();
+        
+        // Inside should always be black
+        assert_eq!(
+            Color::new(0.0, 0.0, 0.0),
+            cs.color(Iteration::Inside {
+                iterations: 100,
+                max_iterations: 4096
+            })
+        );
+        
+        // Outside should return colors from the random palette
+        let color0 = cs.color(Iteration::Outside {
+            iterations: 0,
+            max_iterations: 4096
+        });
+        let color2048 = cs.color(Iteration::Outside {
+            iterations: 2048,
+            max_iterations: 4096
+        });
+        // Colors should wrap around - same iteration % 2048 should give same color
+        assert_eq!(color0, color2048);
     }
 
     #[test]

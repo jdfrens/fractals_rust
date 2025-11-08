@@ -1,3 +1,11 @@
+mod gray;
+mod random;
+mod warp_pov;
+
+pub use gray::{BlackOnWhite, Gray, WhiteOnBlack};
+pub use random::Random;
+pub use warp_pov::{Blue, Green, Red};
+
 use ::image::Rgb;
 
 use super::escape_time::Iteration;

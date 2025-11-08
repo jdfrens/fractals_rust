@@ -1,5 +1,5 @@
-use super::color_scheme::{Color, ColorScheme};
-use super::escape_time::Iteration;
+use super::{Color, ColorScheme};
+use crate::fractals::escape_time::Iteration;
 use rand::Rng;
 
 #[derive(Debug)]
