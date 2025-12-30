@@ -6,6 +6,7 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use yaml_rust::{Yaml, YamlLoader};
 
+use super::burning_ship::BurningShip;
 use super::color_scheme::{BlackOnWhite, Blue, ColorScheme, Gray, Green, Random, Red, WhiteOnBlack};
 use super::escape_time::EscapeTime;
 use super::image::Image;
@@ -94,6 +95,17 @@ fn parse_fractal(fractal_yaml: &Yaml) -> Result<Box<dyn EscapeTime>, ParsingErro
                 ))),
             }?;
             Ok(Box::new(Mandelbrot { max_iterations, escape_length }))
+        }
+        "BurningShip" => {
+            let max_iterations = match fractal_yaml["max_iterations"] {
+                Yaml::Integer(i) => Ok(i),
+                Yaml::BadValue => Ok(128),
+                _ => Err(ParsingError::BadInteger(format!(
+                    "{:?}",
+                    fractal_yaml["max_iterations"]
+                ))),
+            }?;
+            Ok(Box::new(BurningShip { max_iterations, escape_length }))
         }
         _ => Err(ParsingError::BadFractal(format!(
             "{:?} is not a valid fractal",
@@ -633,6 +645,36 @@ mod parser_tests {
         
         let mandelbrot = fractal.as_any().downcast_ref::<Mandelbrot>().unwrap();
         assert_eq!(mandelbrot.max_iterations, 512);
+    }
+
+    #[test]
+    fn test_parse_fractal_burningship_default_max_iterations() {
+        let input = r#"
+        fractal:
+          type: BurningShip
+      "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let fractal = parse_fractal(&docs[0]["fractal"]).unwrap();
+        
+        let burning_ship = fractal.as_any().downcast_ref::<BurningShip>().unwrap();
+        assert_eq!(burning_ship.max_iterations, 128);
+        assert_eq!(burning_ship.escape_length, 2.0);
+    }
+
+    #[test]
+    fn test_parse_fractal_burningship_with_max_iterations() {
+        let input = r#"
+        fractal:
+          type: BurningShip
+          max_iterations: 1024
+          escapeLength: 4.0
+      "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let fractal = parse_fractal(&docs[0]["fractal"]).unwrap();
+        
+        let burning_ship = fractal.as_any().downcast_ref::<BurningShip>().unwrap();
+        assert_eq!(burning_ship.max_iterations, 1024);
+        assert_eq!(burning_ship.escape_length, 4.0);
     }
 
     #[test]
