@@ -1,4 +1,4 @@
-use super::escape_time::{EscapeTime, Iteration};
+use super::escape_time::{escape_time, EscapeTime, Iteration};
 use num_complex::Complex;
 
 #[cfg(test)]
@@ -11,25 +11,7 @@ pub struct Mandelbrot {
 
 impl EscapeTime for Mandelbrot {
     fn iterate(&self, c: &Complex<f64>) -> Iteration {
-        let Mandelbrot { max_iterations } = self;
-        let mut z = Complex::new(0.0, 0.0);
-        let mut iterations = 0;
-
-        while z.norm_sqr() < 4.0 && iterations < *max_iterations {
-            z = z * z + c;
-            iterations = iterations + 1;
-        }
-        if iterations >= *max_iterations {
-            Iteration::Inside {
-                iterations,
-                max_iterations: *max_iterations,
-            }
-        } else {
-            Iteration::Outside {
-                iterations,
-                max_iterations: *max_iterations,
-            }
-        }
+        escape_time(Complex::new(0.0, 0.0), *c, 2.0, self.max_iterations)
     }
 
     #[cfg(test)]

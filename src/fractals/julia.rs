@@ -1,4 +1,4 @@
-use super::escape_time::{EscapeTime, Iteration};
+use super::escape_time::{escape_time, EscapeTime, Iteration};
 use num_complex::Complex;
 
 #[cfg(test)]
@@ -12,25 +12,7 @@ pub struct Julia {
 
 impl EscapeTime for Julia {
     fn iterate(&self, z0: &Complex<f64>) -> Iteration {
-        let Julia { max_iterations, c } = self;
-        let mut z = *z0;
-        let mut iterations = 0;
-
-        while z.norm_sqr() < 4.0 && iterations < *max_iterations {
-            z = z * z + c;
-            iterations = iterations + 1;
-        }
-        if iterations >= *max_iterations {
-            Iteration::Inside {
-                iterations,
-                max_iterations: *max_iterations,
-            }
-        } else {
-            Iteration::Outside {
-                iterations,
-                max_iterations: *max_iterations,
-            }
-        }
+        escape_time(*z0, self.c, 2.0, self.max_iterations)
     }
 
     #[cfg(test)]
