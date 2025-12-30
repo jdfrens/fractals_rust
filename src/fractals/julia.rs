@@ -8,11 +8,12 @@ use std::any::Any;
 pub struct Julia {
     pub max_iterations: i64,
     pub c: Complex<f64>,
+    pub escape_length: f64,
 }
 
 impl EscapeTime for Julia {
     fn iterate(&self, z0: &Complex<f64>) -> Iteration {
-        escape_time(*z0, self.c, 2.0, self.max_iterations)
+        escape_time(*z0, self.c, self.escape_length, self.max_iterations)
     }
 
     #[cfg(test)]
@@ -30,6 +31,7 @@ mod tests {
         let m = Julia {
             max_iterations: 512,
             c: Complex::new(0.0, 0.0),
+            escape_length: 2.0,
         };
 
         assert_eq!(
@@ -53,6 +55,7 @@ mod tests {
         let m = Julia {
             max_iterations: 512,
             c: Complex::new(0.0, 0.0),
+            escape_length: 2.0,
         };
 
         assert_eq!(

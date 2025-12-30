@@ -18,6 +18,7 @@ use super::Job;
 pub enum ParsingError {
     BadComplexNumber(String),
     BadInteger(String),
+    BadFloat(String),
     BadFractal(String),
     IoError(String),
     YamlError(String),
@@ -65,6 +66,8 @@ fn parse_fractal(fractal_yaml: &Yaml) -> Result<Box<dyn EscapeTime>, ParsingErro
         .as_str()
         .ok_or_else(|| ParsingError::MissingField("fractal type".to_string()))?;
 
+    let escape_length = parse_escape_length(&fractal_yaml["escapeLength"])?;
+
     match fractal_type {
         "Julia" => {
             let max_iterations_result = match fractal_yaml["max_iterations"] {
@@ -77,7 +80,7 @@ fn parse_fractal(fractal_yaml: &Yaml) -> Result<Box<dyn EscapeTime>, ParsingErro
             };
             let c = parse_complex(&fractal_yaml["c"])?;
             match max_iterations_result {
-                Ok(max_iterations) => Ok(Box::new(Julia { max_iterations, c })),
+                Ok(max_iterations) => Ok(Box::new(Julia { max_iterations, c, escape_length })),
                 Err(e) => Err(e),
             }
         }
@@ -90,12 +93,21 @@ fn parse_fractal(fractal_yaml: &Yaml) -> Result<Box<dyn EscapeTime>, ParsingErro
                     fractal_yaml["max_iterations"]
                 ))),
             }?;
-            Ok(Box::new(Mandelbrot { max_iterations }))
+            Ok(Box::new(Mandelbrot { max_iterations, escape_length }))
         }
         _ => Err(ParsingError::BadFractal(format!(
             "{:?} is not a valid fractal",
             fractal_yaml
         ))),
+    }
+}
+
+fn parse_escape_length(escape_length_yaml: &Yaml) -> Result<f64, ParsingError> {
+    match escape_length_yaml {
+        Yaml::Real(s) => s.parse::<f64>().map_err(|_| ParsingError::BadFloat(format!("Invalid float: {}", s))),
+        Yaml::Integer(i) => Ok(*i as f64),
+        Yaml::BadValue => Ok(2.0),
+        _ => Err(ParsingError::BadFloat(format!("{:?}", escape_length_yaml))),
     }
 }
 
@@ -718,5 +730,36 @@ mod parser_tests {
     fn test_parse_nonexistent_file() {
         let result = parse(&String::from("/nonexistent/file.yml"));
         assert!(matches!(result, Err(ParsingError::IoError(_))));
+    }
+
+    #[test]
+    fn test_parse_escape_length_real() {
+        assert_eq!(Ok(3.5), parse_escape_length(&Yaml::Real("3.5".to_string())));
+        assert_eq!(Ok(2.0), parse_escape_length(&Yaml::Real("2.0".to_string())));
+        assert_eq!(Ok(1.5), parse_escape_length(&Yaml::Real("1.5".to_string())));
+    }
+
+    #[test]
+    fn test_parse_escape_length_integer() {
+        assert_eq!(Ok(2.0), parse_escape_length(&Yaml::Integer(2)));
+        assert_eq!(Ok(5.0), parse_escape_length(&Yaml::Integer(5)));
+        assert_eq!(Ok(10.0), parse_escape_length(&Yaml::Integer(10)));
+    }
+
+    #[test]
+    fn test_parse_escape_length_default() {
+        assert_eq!(Ok(2.0), parse_escape_length(&Yaml::BadValue));
+    }
+
+    #[test]
+    fn test_parse_escape_length_invalid_real() {
+        let result = parse_escape_length(&Yaml::Real("not_a_number".to_string()));
+        assert!(matches!(result, Err(ParsingError::BadFloat(_))));
+    }
+
+    #[test]
+    fn test_parse_escape_length_string() {
+        let result = parse_escape_length(&Yaml::String("3.5".to_string()));
+        assert!(matches!(result, Err(ParsingError::BadFloat(_))));
     }
 }

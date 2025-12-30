@@ -7,11 +7,12 @@ use std::any::Any;
 #[derive(Debug)]
 pub struct Mandelbrot {
     pub max_iterations: i64,
+    pub escape_length: f64,
 }
 
 impl EscapeTime for Mandelbrot {
     fn iterate(&self, c: &Complex<f64>) -> Iteration {
-        escape_time(Complex::new(0.0, 0.0), *c, 2.0, self.max_iterations)
+        escape_time(Complex::new(0.0, 0.0), *c, self.escape_length, self.max_iterations)
     }
 
     #[cfg(test)]
@@ -28,6 +29,7 @@ mod tests {
     fn test_iterate_inside() {
         let m = Mandelbrot {
             max_iterations: 512,
+            escape_length: 2.0,
         };
 
         assert_eq!(
@@ -50,6 +52,7 @@ mod tests {
     fn test_iterate_outside() {
         let m = Mandelbrot {
             max_iterations: 512,
+            escape_length: 2.0,
         };
 
         assert_eq!(
