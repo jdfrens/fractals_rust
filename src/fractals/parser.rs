@@ -16,15 +16,15 @@ use super::Job;
 
 #[derive(Debug, PartialEq)]
 pub enum ParsingError {
+    BadColorScheme(String),
     BadComplexNumber(String),
-    BadInteger(String),
     BadFloat(String),
     BadFractal(String),
-    IoError(String),
-    YamlError(String),
-    BadColorScheme(String),
+    BadInteger(String),
     BadSize(String),
+    IoError(String),
     MissingField(String),
+    YamlError(String),
 }
 
 #[derive(Debug, PartialEq)]
