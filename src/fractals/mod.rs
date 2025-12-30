@@ -1,3 +1,4 @@
+mod burning_ship;
 pub mod color_scheme;
 pub mod escape_time;
 pub mod image;
