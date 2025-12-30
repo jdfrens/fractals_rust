@@ -22,18 +22,23 @@ pub enum Iteration {
     },
 }
 
-/// Escape-time algorithm: iterates z = z² + c until |z| > escape_length or max_iterations reached
-pub fn escape_time(
+/// Escape-time algorithm: iterates z = transform(z)² + c until |z| > escape_length or max_iterations reached
+pub fn escape_time<F>(
     z0: Complex<f64>,
     c: Complex<f64>,
     escape_length: f64,
     max_iterations: i64,
-) -> Iteration {
+    transform: F,
+) -> Iteration
+where
+    F: Fn(Complex<f64>) -> Complex<f64>,
+{
     let mut z = z0;
     let mut iterations = 0;
     let escape_threshold = escape_length * escape_length;
 
     while z.norm_sqr() < escape_threshold && iterations < max_iterations {
+        z = transform(z);
         z = z * z + c;
         iterations += 1;
     }

@@ -12,7 +12,7 @@ pub struct Mandelbrot {
 
 impl EscapeTime for Mandelbrot {
     fn iterate(&self, c: &Complex<f64>) -> Iteration {
-        escape_time(Complex::new(0.0, 0.0), *c, self.escape_length, self.max_iterations)
+        escape_time(Complex::new(0.0, 0.0), *c, self.escape_length, self.max_iterations, |z| z)
     }
 
     #[cfg(test)]
