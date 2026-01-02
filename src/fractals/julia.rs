@@ -13,7 +13,7 @@ pub struct Julia {
 
 impl EscapeTime for Julia {
     fn iterate(&self, z0: &Complex<f64>) -> Iteration {
-        escape_time(*z0, self.c, self.escape_length, self.max_iterations)
+        escape_time(*z0, self.c, self.escape_length, self.max_iterations, |z| z)
     }
 
     #[cfg(test)]

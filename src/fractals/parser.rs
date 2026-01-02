@@ -6,7 +6,10 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use yaml_rust::{Yaml, YamlLoader};
 
-use super::color_scheme::{BlackOnWhite, Blue, ColorScheme, Gray, Green, Random, Red, WhiteOnBlack};
+use super::burning_ship::BurningShip;
+use super::color_scheme::{
+    BlackOnWhite, Blue, ColorScheme, Gray, Green, Random, Red, WhiteOnBlack,
+};
 use super::escape_time::EscapeTime;
 use super::image::Image;
 use super::julia::Julia;
@@ -66,34 +69,32 @@ fn parse_fractal(fractal_yaml: &Yaml) -> Result<Box<dyn EscapeTime>, ParsingErro
         .as_str()
         .ok_or_else(|| ParsingError::MissingField("fractal type".to_string()))?;
 
-    let escape_length = parse_escape_length(&fractal_yaml["escapeLength"])?;
-
     match fractal_type {
+        "BurningShip" => {
+            let max_iterations = parse_max_iterations(&fractal_yaml["max_iterations"])?;
+            let escape_length = parse_escape_length(&fractal_yaml["escapeLength"])?;
+            Ok(Box::new(BurningShip {
+                max_iterations,
+                escape_length,
+            }))
+        }
         "Julia" => {
-            let max_iterations_result = match fractal_yaml["max_iterations"] {
-                Yaml::Integer(i) => Ok(i),
-                Yaml::BadValue => Ok(128),
-                _ => Err(ParsingError::BadInteger(format!(
-                    "{:?}",
-                    fractal_yaml["max_iterations"]
-                ))),
-            };
             let c = parse_complex(&fractal_yaml["c"])?;
-            match max_iterations_result {
-                Ok(max_iterations) => Ok(Box::new(Julia { max_iterations, c, escape_length })),
-                Err(e) => Err(e),
-            }
+            let max_iterations = parse_max_iterations(&fractal_yaml["max_iterations"])?;
+            let escape_length = parse_escape_length(&fractal_yaml["escapeLength"])?;
+            Ok(Box::new(Julia {
+                max_iterations,
+                c,
+                escape_length,
+            }))
         }
         "Mandelbrot" => {
-            let max_iterations = match fractal_yaml["max_iterations"] {
-                Yaml::Integer(i) => Ok(i),
-                Yaml::BadValue => Ok(128),
-                _ => Err(ParsingError::BadInteger(format!(
-                    "{:?}",
-                    fractal_yaml["max_iterations"]
-                ))),
-            }?;
-            Ok(Box::new(Mandelbrot { max_iterations, escape_length }))
+            let max_iterations = parse_max_iterations(&fractal_yaml["max_iterations"])?;
+            let escape_length = parse_escape_length(&fractal_yaml["escapeLength"])?;
+            Ok(Box::new(Mandelbrot {
+                max_iterations,
+                escape_length,
+            }))
         }
         _ => Err(ParsingError::BadFractal(format!(
             "{:?} is not a valid fractal",
@@ -102,9 +103,22 @@ fn parse_fractal(fractal_yaml: &Yaml) -> Result<Box<dyn EscapeTime>, ParsingErro
     }
 }
 
+fn parse_max_iterations(max_iterations_yaml: &Yaml) -> Result<i64, ParsingError> {
+    match max_iterations_yaml {
+        Yaml::Integer(i) => Ok(*i),
+        Yaml::BadValue => Ok(128),
+        _ => Err(ParsingError::BadInteger(format!(
+            "{:?}",
+            max_iterations_yaml
+        ))),
+    }
+}
+
 fn parse_escape_length(escape_length_yaml: &Yaml) -> Result<f64, ParsingError> {
     match escape_length_yaml {
-        Yaml::Real(s) => s.parse::<f64>().map_err(|_| ParsingError::BadFloat(format!("Invalid float: {}", s))),
+        Yaml::Real(s) => s
+            .parse::<f64>()
+            .map_err(|_| ParsingError::BadFloat(format!("Invalid float: {}", s))),
         Yaml::Integer(i) => Ok(*i as f64),
         Yaml::BadValue => Ok(2.0),
         _ => Err(ParsingError::BadFloat(format!("{:?}", escape_length_yaml))),
@@ -501,7 +515,7 @@ mod parser_tests {
       "#;
         let docs = YamlLoader::load_from_str(input).unwrap();
         let cs = parse_color_scheme(&docs[0]["color_scheme"]).unwrap();
-        
+
         // Inside should always be black
         assert_eq!(
             Color::new(0.0, 0.0, 0.0),
@@ -510,15 +524,15 @@ mod parser_tests {
                 max_iterations: 4096
             })
         );
-        
+
         // Outside should return colors from the random palette
         let color0 = cs.color(Iteration::Outside {
             iterations: 0,
-            max_iterations: 4096
+            max_iterations: 4096,
         });
         let color2048 = cs.color(Iteration::Outside {
             iterations: 2048,
-            max_iterations: 4096
+            max_iterations: 4096,
         });
         // Colors should wrap around - same iteration % 2048 should give same color
         assert_eq!(color0, color2048);
@@ -534,7 +548,7 @@ mod parser_tests {
       "#;
         let docs = YamlLoader::load_from_str(input).unwrap();
         let fractal = parse_fractal(&docs[0]["fractal"]).unwrap();
-        
+
         // Downcast to Julia to verify the values
         let julia = fractal.as_any().downcast_ref::<Julia>().unwrap();
         assert_eq!(julia.max_iterations, 376);
@@ -548,7 +562,7 @@ mod parser_tests {
       "#;
         let docs = YamlLoader::load_from_str(input).unwrap();
         let fractal = parse_fractal(&docs[0]["fractal"]).unwrap();
-        
+
         let julia = fractal.as_any().downcast_ref::<Julia>().unwrap();
         assert_eq!(julia.max_iterations, 128);
         assert_eq!(julia.c, Complex::new(1.0, 2.0));
@@ -616,7 +630,7 @@ mod parser_tests {
       "#;
         let docs = YamlLoader::load_from_str(input).unwrap();
         let fractal = parse_fractal(&docs[0]["fractal"]).unwrap();
-        
+
         let mandelbrot = fractal.as_any().downcast_ref::<Mandelbrot>().unwrap();
         assert_eq!(mandelbrot.max_iterations, 128);
     }
@@ -630,9 +644,39 @@ mod parser_tests {
       "#;
         let docs = YamlLoader::load_from_str(input).unwrap();
         let fractal = parse_fractal(&docs[0]["fractal"]).unwrap();
-        
+
         let mandelbrot = fractal.as_any().downcast_ref::<Mandelbrot>().unwrap();
         assert_eq!(mandelbrot.max_iterations, 512);
+    }
+
+    #[test]
+    fn test_parse_fractal_burningship_default_max_iterations() {
+        let input = r#"
+        fractal:
+          type: BurningShip
+      "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let fractal = parse_fractal(&docs[0]["fractal"]).unwrap();
+
+        let burning_ship = fractal.as_any().downcast_ref::<BurningShip>().unwrap();
+        assert_eq!(burning_ship.max_iterations, 128);
+        assert_eq!(burning_ship.escape_length, 2.0);
+    }
+
+    #[test]
+    fn test_parse_fractal_burningship_with_max_iterations() {
+        let input = r#"
+        fractal:
+          type: BurningShip
+          max_iterations: 1024
+          escapeLength: 4.0
+      "#;
+        let docs = YamlLoader::load_from_str(input).unwrap();
+        let fractal = parse_fractal(&docs[0]["fractal"]).unwrap();
+
+        let burning_ship = fractal.as_any().downcast_ref::<BurningShip>().unwrap();
+        assert_eq!(burning_ship.max_iterations, 1024);
+        assert_eq!(burning_ship.escape_length, 4.0);
     }
 
     #[test]
